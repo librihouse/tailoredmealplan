@@ -52,12 +52,6 @@ export function Hero() {
               </Button>
             </Link>
             
-            <button className="group flex items-center gap-4 text-white font-bold hover:text-primary transition-colors">
-              <div className="flex h-16 w-16 items-center justify-center border border-white/30 bg-white/10 backdrop-blur-sm rounded-full group-hover:bg-primary group-hover:border-primary group-hover:text-black transition-all">
-                <Play className="h-6 w-6 fill-current ml-1" />
-              </div>
-              <span className="tracking-widest text-sm">WATCH FILM</span>
-            </button>
           </div>
         </motion.div>
       </div>
