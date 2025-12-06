@@ -1,5 +1,4 @@
 import { Link } from "wouter";
-import { Facebook, Twitter, Instagram, Youtube } from "lucide-react";
 
 export function Footer() {
   return (
@@ -12,16 +11,9 @@ export function Footer() {
                 TAILORED<span className="text-white not-italic">MEALPLAN</span>
               </span>
             </Link>
-            <p className="text-gray-400 text-sm mb-8 leading-relaxed font-medium">
+            <p className="text-gray-400 text-sm leading-relaxed font-medium">
               We build high-performance nutrition technology for humans who want to optimize their biology.
             </p>
-            <div className="flex gap-4">
-              {[Facebook, Twitter, Instagram, Youtube].map((Icon, i) => (
-                <div key={i} className="h-10 w-10 border border-white/20 flex items-center justify-center hover:bg-primary hover:border-primary hover:text-black transition-all cursor-pointer">
-                  <Icon className="h-5 w-5" />
-                </div>
-              ))}
-            </div>
           </div>
 
           <div>
