@@ -27,7 +27,7 @@ export default function Home() {
       <Hero />
       
       {/* Mission / High Energy Section */}
-      <section className="bg-black text-white py-24 md:py-32">
+      <section className="bg-white text-black py-24 md:py-32">
         <div className="container max-w-screen-2xl px-4 md:px-8">
           <div className="grid md:grid-cols-2 gap-16 items-center">
             <motion.div 
@@ -36,27 +36,27 @@ export default function Home() {
               viewport={{ once: true }}
               variants={fadeInUp}
             >
-              <h2 className="font-heading text-5xl md:text-7xl font-bold uppercase leading-none mb-8">
+              <h2 className="font-heading text-5xl md:text-7xl font-bold uppercase leading-none mb-8 text-black">
                 Eat Like <br />
                 <span className="text-primary">You Give a Damn.</span>
               </h2>
-              <p className="text-xl text-gray-400 mb-8 leading-relaxed">
+              <p className="text-xl text-gray-600 mb-8 leading-relaxed font-medium">
                 Generic meal plans are dead. You need nutrition that understands your DNA, your gym schedule, and your grandma's recipes. We combine hardcore science with real food culture.
               </p>
               
               <div className="grid grid-cols-2 gap-8 mb-10">
                 <div>
-                  <h3 className="text-3xl font-bold text-white mb-2">10k+</h3>
+                  <h3 className="text-3xl font-bold text-black mb-2">10k+</h3>
                   <p className="text-sm text-gray-500 font-bold tracking-widest uppercase">Athletes Fueled</p>
                 </div>
                 <div>
-                  <h3 className="text-3xl font-bold text-white mb-2">50+</h3>
+                  <h3 className="text-3xl font-bold text-black mb-2">50+</h3>
                   <p className="text-sm text-gray-500 font-bold tracking-widest uppercase">Cuisines</p>
                 </div>
               </div>
 
               <Link href="/features">
-                <Button variant="outline" className="border-white/20 text-white hover:bg-white hover:text-black h-14 px-8 font-bold tracking-wide rounded-none uppercase">
+                <Button variant="outline" className="border-black text-black hover:bg-black hover:text-white h-14 px-8 font-bold tracking-wide rounded-none uppercase transition-all">
                   Explore Features
                 </Button>
               </Link>
@@ -69,10 +69,10 @@ export default function Home() {
               transition={{ duration: 0.8 }}
               className="relative"
             >
-              <div className="aspect-[4/5] w-full overflow-hidden bg-gray-900">
-                <img src={imgDiverse} alt="Fit diverse group" className="h-full w-full object-cover opacity-90 hover:scale-105 transition-transform duration-700" />
+              <div className="aspect-[4/5] w-full overflow-hidden bg-gray-100 shadow-2xl">
+                <img src={imgDiverse} alt="Fit diverse group" className="h-full w-full object-cover opacity-100 hover:scale-105 transition-transform duration-700" />
               </div>
-              <div className="absolute -bottom-10 -left-10 w-2/3 border-4 border-black">
+              <div className="absolute -bottom-10 -left-10 w-2/3 border-8 border-white shadow-xl">
                  <img src={imgBowl} alt="Healthy Bowl" className="w-full object-cover" />
               </div>
             </motion.div>
@@ -81,7 +81,7 @@ export default function Home() {
       </section>
 
       {/* Cultural Inclusion / Food Grid */}
-      <section className="bg-white text-black py-24 md:py-32 overflow-hidden">
+      <section className="bg-gray-50 text-black py-24 md:py-32 overflow-hidden">
         <div className="container max-w-screen-2xl px-4 md:px-8">
           <motion.div 
             initial="hidden"
@@ -94,7 +94,7 @@ export default function Home() {
             <h2 className="font-heading text-5xl md:text-7xl font-bold uppercase mb-6 text-black">
               Culture on <br /> Your Plate
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-gray-600 font-medium">
               Whether you eat Halal, Kosher, Vegan, or Spicy Szechuan—our AI builds your macros around the food you actually love.
             </p>
           </motion.div>
@@ -111,7 +111,7 @@ export default function Home() {
               { img: imgMed, title: "Mediterranean", desc: "Heart-healthy fats, seafood & fresh greens." },
               { img: imgBowl, title: "Modern Fusion", desc: "Macro-balanced bowls for the busy athlete." }
             ].map((item, i) => (
-              <motion.div key={i} variants={fadeInUp} className="group cursor-pointer">
+              <motion.div key={i} variants={fadeInUp} className="group cursor-pointer bg-white p-4 shadow-sm hover:shadow-xl transition-all">
                 <div className="aspect-[4/3] overflow-hidden mb-6 bg-gray-100">
                   <img src={item.img} alt={item.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                 </div>
@@ -123,8 +123,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Steps / Dark Mode */}
-      <section className="bg-gray-900 text-white py-24 md:py-32">
+      {/* Steps */}
+      <section className="bg-white text-black py-24 md:py-32">
          <div className="container max-w-screen-2xl px-4 md:px-8">
             <div className="grid lg:grid-cols-2 gap-20">
               <motion.div
@@ -133,7 +133,7 @@ export default function Home() {
                  viewport={{ once: true }}
                  variants={fadeInUp}
               >
-                 <h2 className="font-heading text-5xl md:text-6xl font-bold uppercase mb-12">
+                 <h2 className="font-heading text-5xl md:text-6xl font-bold uppercase mb-12 text-black">
                    The <span className="text-primary">Algorithm</span>
                  </h2>
                  
@@ -144,12 +144,12 @@ export default function Home() {
                      { icon: Trophy, title: "03. Execute & Win", desc: "Get a weekly grocery list and recipes. Hit your PRs." }
                    ].map((step, i) => (
                      <div key={i} className="flex gap-6 group">
-                       <div className="h-16 w-16 shrink-0 border border-white/20 flex items-center justify-center rounded-full group-hover:border-primary group-hover:bg-primary group-hover:text-black transition-all duration-300">
+                       <div className="h-16 w-16 shrink-0 border-2 border-gray-200 flex items-center justify-center rounded-full group-hover:border-primary group-hover:bg-primary group-hover:text-white transition-all duration-300">
                          <step.icon className="h-8 w-8" />
                        </div>
                        <div>
                          <h3 className="font-heading text-2xl font-bold uppercase mb-2">{step.title}</h3>
-                         <p className="text-gray-400">{step.desc}</p>
+                         <p className="text-gray-600 font-medium">{step.desc}</p>
                        </div>
                      </div>
                    ))}
@@ -161,13 +161,13 @@ export default function Home() {
                  whileInView={{ opacity: 1, x: 0 }}
                  viewport={{ once: true }}
                  transition={{ duration: 0.8 }}
-                 className="bg-primary rounded-3xl p-1 lg:rotate-3 hover:rotate-0 transition-transform duration-500"
+                 className="bg-primary rounded-3xl p-1 lg:rotate-3 hover:rotate-0 transition-transform duration-500 shadow-2xl"
               >
-                 <div className="bg-black h-full w-full rounded-[20px] overflow-hidden relative">
-                    <img src={imgDiverse} className="w-full h-full object-cover opacity-60 grayscale hover:grayscale-0 transition-all duration-700" alt="App Preview" />
+                 <div className="bg-white h-full w-full rounded-[20px] overflow-hidden relative">
+                    <img src={imgDiverse} className="w-full h-full object-cover opacity-90 grayscale hover:grayscale-0 transition-all duration-700" alt="App Preview" />
                     <div className="absolute inset-0 flex items-center justify-center">
                        <Link href="/onboarding">
-                         <Button size="lg" className="bg-white text-black hover:bg-white/90 font-bold h-20 w-20 rounded-full">
+                         <Button size="lg" className="bg-black text-white hover:bg-black/90 font-bold h-20 w-20 rounded-full shadow-lg hover:scale-110 transition-transform">
                            GO
                          </Button>
                        </Link>
@@ -181,14 +181,14 @@ export default function Home() {
       {/* CTA */}
       <section className="bg-primary py-32 text-center">
         <div className="container px-4">
-          <h2 className="font-heading text-6xl md:text-9xl font-bold uppercase leading-none mb-8 text-black">
+          <h2 className="font-heading text-6xl md:text-9xl font-bold uppercase leading-none mb-8 text-white drop-shadow-sm">
             Start Now
           </h2>
-          <p className="text-xl md:text-2xl text-black/80 font-bold mb-12 max-w-2xl mx-auto">
+          <p className="text-xl md:text-2xl text-white/90 font-bold mb-12 max-w-2xl mx-auto">
             Your body is a machine. Stop fueling it with garbage.
           </p>
           <Link href="/onboarding">
-             <Button className="bg-black text-white hover:bg-black/80 h-20 px-16 text-xl font-bold uppercase tracking-widest rounded-none">
+             <Button className="bg-white text-primary hover:bg-gray-100 h-20 px-16 text-xl font-bold uppercase tracking-widest rounded-none shadow-xl">
                Build My Plan
              </Button>
           </Link>
