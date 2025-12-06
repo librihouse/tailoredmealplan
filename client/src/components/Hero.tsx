@@ -44,13 +44,6 @@ export function Hero() {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-6">
-            <Link href="/signup">
-              <Button size="lg" className="h-16 px-10 bg-primary hover:bg-primary/90 text-black text-lg font-bold tracking-wider rounded-none skew-x-[-10deg] group transition-transform hover:scale-105">
-                <span className="skew-x-[10deg] flex items-center">
-                  GENERATE PLAN <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                </span>
-              </Button>
-            </Link>
             
           </div>
         </motion.div>
