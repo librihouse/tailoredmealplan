@@ -10,50 +10,50 @@ export default function Professionals() {
   return (
     <Layout>
       {/* B2B Hero */}
-      <section className="bg-[#1E3A5F] text-white py-20">
+      <section className="bg-primary-dark text-white py-20">
         <div className="container max-w-screen-xl px-4 md:px-8">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
-              <div className="inline-block bg-blue-500/20 px-4 py-1 rounded-full text-sm font-medium mb-6 border border-blue-400/30">
+              <div className="inline-block bg-white/10 px-4 py-1 rounded-full text-sm font-medium mb-6 border border-white/20">
                 For Nutritionists, Dietitians & Coaches
               </div>
               <h1 className="font-serif text-4xl md:text-6xl font-bold leading-tight mb-6">
                 Scale Your Nutrition Practice with AI
               </h1>
-              <p className="text-lg text-blue-100 mb-8 leading-relaxed">
+              <p className="text-lg text-white/80 mb-8 leading-relaxed">
                 Create personalized meal plans for hundreds of clients in minutes, not hours. White-labeled with your branding.
               </p>
-              <Button size="lg" className="bg-white text-[#1E3A5F] hover:bg-blue-50 text-lg px-8 h-12">
+              <Button size="lg" className="bg-white text-primary-dark hover:bg-white/90 text-lg px-8 h-12">
                 Request Demo
               </Button>
             </div>
             <div className="bg-white/5 p-8 rounded-2xl border border-white/10 backdrop-blur-sm">
               <div className="space-y-6">
                  <div className="flex items-start gap-4">
-                   <div className="bg-blue-500 p-2 rounded-lg">
+                   <div className="bg-white/10 p-2 rounded-lg">
                      <Users className="h-6 w-6 text-white" />
                    </div>
                    <div>
                      <h3 className="font-bold text-xl">Manage Unlimited Clients</h3>
-                     <p className="text-blue-200 text-sm">Keep track of progress, preferences, and plans in one dashboard.</p>
+                     <p className="text-white/70 text-sm">Keep track of progress, preferences, and plans in one dashboard.</p>
                    </div>
                  </div>
                  <div className="flex items-start gap-4">
-                   <div className="bg-blue-500 p-2 rounded-lg">
+                   <div className="bg-white/10 p-2 rounded-lg">
                      <BriefcaseMedical className="h-6 w-6 text-white" />
                    </div>
                    <div>
                      <h3 className="font-bold text-xl">Professional Exports</h3>
-                     <p className="text-blue-200 text-sm">Generate beautiful PDF meal plans with your logo and colors.</p>
+                     <p className="text-white/70 text-sm">Generate beautiful PDF meal plans with your logo and colors.</p>
                    </div>
                  </div>
                  <div className="flex items-start gap-4">
-                   <div className="bg-blue-500 p-2 rounded-lg">
+                   <div className="bg-white/10 p-2 rounded-lg">
                      <TrendingUp className="h-6 w-6 text-white" />
                    </div>
                    <div>
                      <h3 className="font-bold text-xl">Automated Progress</h3>
-                     <p className="text-blue-200 text-sm">Let AI handle the adjustments based on client check-ins.</p>
+                     <p className="text-white/70 text-sm">Let AI handle the adjustments based on client check-ins.</p>
                    </div>
                  </div>
               </div>
@@ -67,7 +67,7 @@ export default function Professionals() {
         <div className="container max-w-screen-lg px-4 mx-auto">
           <div className="grid md:grid-cols-2 gap-12">
             <div>
-              <h2 className="font-serif text-3xl font-bold text-[#1E3A5F] mb-6">Why Professionals Choose Us</h2>
+              <h2 className="font-serif text-3xl font-bold text-primary-dark mb-6">Why Professionals Choose Us</h2>
               <ul className="space-y-4">
                 {[
                   "Save 10+ hours per week on meal planning",
@@ -77,7 +77,7 @@ export default function Professionals() {
                   "HIPAA Compliant data storage"
                 ].map((item, i) => (
                   <li key={i} className="flex items-center gap-3">
-                    <Check className="h-5 w-5 text-green-600" />
+                    <Check className="h-5 w-5 text-primary" />
                     <span className="text-gray-700">{item}</span>
                   </li>
                 ))}
@@ -95,7 +95,7 @@ export default function Professionals() {
               </div>
             </div>
 
-            <Card className="border-t-4 border-t-[#1E3A5F] shadow-lg">
+            <Card className="border-t-4 border-t-primary shadow-lg">
               <CardHeader>
                 <CardTitle>Request a Demo</CardTitle>
               </CardHeader>
@@ -136,7 +136,7 @@ export default function Professionals() {
                   <Label>Message (Optional)</Label>
                   <Textarea placeholder="Tell us about your needs..." />
                 </div>
-                <Button className="w-full bg-[#1E3A5F] hover:bg-[#152a45] text-white">Submit Request</Button>
+                <Button className="w-full bg-primary hover:bg-primary-light text-white">Submit Request</Button>
               </CardContent>
             </Card>
           </div>

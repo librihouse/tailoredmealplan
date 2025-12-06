@@ -17,7 +17,7 @@ export default function HowItWorks() {
       title: "Complete Health Questionnaire",
       desc: "Tell us about your health conditions, dietary restrictions, allergies, and goals.",
       icon: ClipboardList,
-      color: "bg-green-100 text-green-700"
+      color: "bg-teal-100 text-teal-700"
     },
     {
       number: "03",

@@ -63,7 +63,7 @@ export function Hero() {
              
              {/* Floating Badge */}
              <div className="absolute -bottom-6 -left-6 md:bottom-10 md:left-0 bg-white p-4 rounded-xl shadow-lg border border-border/40 flex items-center gap-3 animate-in slide-in-from-bottom-10 duration-1000 delay-300">
-               <div className="bg-green-100 p-2 rounded-full text-green-700">
+               <div className="bg-primary/10 p-2 rounded-full text-primary">
                  <Star className="h-6 w-6 fill-current" />
                </div>
                <div>
