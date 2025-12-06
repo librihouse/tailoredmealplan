@@ -11,7 +11,7 @@ export function Navbar() {
     { href: "/how-it-works", label: "HOW IT WORKS" },
     { href: "/features", label: "FEATURES" },
     { href: "/pricing", label: "PRICING" },
-    { href: "/professionals", label: "PRO" },
+    { href: "/professionals", label: "PROFESSIONALS" },
   ];
 
   return (
