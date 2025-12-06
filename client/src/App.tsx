@@ -14,6 +14,7 @@ import Onboarding from "@/pages/onboarding";
 import About from "@/pages/about";
 import Contact from "@/pages/contact";
 import Blog from "@/pages/blog";
+import Recipes from "@/pages/recipes";
 import Legal from "@/pages/legal";
 
 function Router() {
@@ -31,6 +32,7 @@ function Router() {
       <Route path="/about" component={About} />
       <Route path="/contact" component={Contact} />
       <Route path="/blog" component={Blog} />
+      <Route path="/recipes" component={Recipes} />
       <Route path="/privacy" component={Legal} />
       <Route path="/terms" component={Legal} />
       <Route path="/cookies" component={Legal} />
