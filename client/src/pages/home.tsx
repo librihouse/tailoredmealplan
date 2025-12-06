@@ -166,7 +166,7 @@ export default function Home() {
                  <div className="bg-black h-full w-full rounded-[20px] overflow-hidden relative">
                     <img src={imgDiverse} className="w-full h-full object-cover opacity-60 grayscale hover:grayscale-0 transition-all duration-700" alt="App Preview" />
                     <div className="absolute inset-0 flex items-center justify-center">
-                       <Link href="/onboarding">
+                       <Link href="/signup">
                          <Button size="lg" className="bg-white text-black hover:bg-white/90 font-bold h-20 w-20 rounded-full">
                            GO
                          </Button>
@@ -187,7 +187,7 @@ export default function Home() {
           <p className="text-xl md:text-2xl text-black/80 font-bold mb-12 max-w-2xl mx-auto">
             Your body is a machine. Stop fueling it with garbage.
           </p>
-          <Link href="/onboarding">
+          <Link href="/signup">
              <Button className="bg-black text-white hover:bg-black/80 h-20 px-16 text-xl font-bold uppercase tracking-widest rounded-none">
                Build My Plan
              </Button>

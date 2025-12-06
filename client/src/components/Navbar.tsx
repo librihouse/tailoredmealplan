@@ -43,7 +43,7 @@ export function Navbar() {
               LOG IN
             </Button>
           </Link>
-          <Link href="/onboarding">
+          <Link href="/signup">
             <Button className="bg-primary hover:bg-primary/90 text-black font-bold tracking-wide px-6 py-5 rounded-none skew-x-[-10deg]">
               <span className="skew-x-[10deg]">START NOW</span>
             </Button>
