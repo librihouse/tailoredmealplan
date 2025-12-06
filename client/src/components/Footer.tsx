@@ -1,72 +1,63 @@
 import { Link } from "wouter";
-import { Facebook, Twitter, Instagram, Youtube, Mail } from "lucide-react";
+import { Facebook, Twitter, Instagram, Youtube } from "lucide-react";
 
 export function Footer() {
   return (
-    <footer className="bg-primary text-white py-12 md:py-16">
+    <footer className="bg-black text-white py-20 border-t border-white/10">
       <div className="container max-w-screen-2xl px-4 md:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
           <div className="md:col-span-1">
             <Link href="/">
-              <span className="font-serif text-2xl font-bold mb-4 block cursor-pointer">
-                TailoredMealPlan.com
+              <span className="font-heading text-3xl font-bold italic tracking-tighter text-primary cursor-pointer block mb-6">
+                TAILORED<span className="text-white not-italic">MEALPLAN</span>
               </span>
             </Link>
-            <p className="text-primary-foreground/80 text-sm mb-6 leading-relaxed">
-              AI-powered nutrition plans that respect your dietary needs, health goals, and cultural preferences.
+            <p className="text-gray-400 text-sm mb-8 leading-relaxed font-medium">
+              We build high-performance nutrition technology for humans who want to optimize their biology.
             </p>
             <div className="flex gap-4">
-              <Facebook className="h-5 w-5 opacity-80 hover:opacity-100 cursor-pointer" />
-              <Twitter className="h-5 w-5 opacity-80 hover:opacity-100 cursor-pointer" />
-              <Instagram className="h-5 w-5 opacity-80 hover:opacity-100 cursor-pointer" />
-              <Youtube className="h-5 w-5 opacity-80 hover:opacity-100 cursor-pointer" />
+              {[Facebook, Twitter, Instagram, Youtube].map((Icon, i) => (
+                <div key={i} className="h-10 w-10 border border-white/20 flex items-center justify-center hover:bg-primary hover:border-primary hover:text-black transition-all cursor-pointer">
+                  <Icon className="h-5 w-5" />
+                </div>
+              ))}
             </div>
           </div>
 
           <div>
-            <h4 className="font-serif font-bold mb-4 text-lg">Platform</h4>
-            <ul className="space-y-2 text-sm text-primary-foreground/80">
-              <li><Link href="/how-it-works" className="hover:text-white">How It Works</Link></li>
-              <li><Link href="/features" className="hover:text-white">Features</Link></li>
-              <li><Link href="/pricing" className="hover:text-white">Pricing</Link></li>
-              <li><Link href="/professionals" className="hover:text-white">For Professionals</Link></li>
-              <li><Link href="/testimonials" className="hover:text-white">Testimonials</Link></li>
+            <h4 className="font-bold tracking-widest uppercase mb-6 text-sm text-gray-500">Platform</h4>
+            <ul className="space-y-4 text-sm font-bold">
+              <li><Link href="/how-it-works" className="hover:text-primary transition-colors">HOW IT WORKS</Link></li>
+              <li><Link href="/features" className="hover:text-primary transition-colors">FEATURES</Link></li>
+              <li><Link href="/pricing" className="hover:text-primary transition-colors">PRICING</Link></li>
+              <li><Link href="/professionals" className="hover:text-primary transition-colors">FOR COACHES</Link></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-serif font-bold mb-4 text-lg">Resources</h4>
-            <ul className="space-y-2 text-sm text-primary-foreground/80">
-              <li><Link href="/blog" className="hover:text-white">Blog</Link></li>
-              <li><Link href="/recipes" className="hover:text-white">Recipe Database</Link></li>
-              <li><Link href="/help" className="hover:text-white">Help Center</Link></li>
-              <li><Link href="/contact" className="hover:text-white">Contact Us</Link></li>
+            <h4 className="font-bold tracking-widest uppercase mb-6 text-sm text-gray-500">Resources</h4>
+            <ul className="space-y-4 text-sm font-bold">
+              <li><Link href="/blog" className="hover:text-primary transition-colors">PERFORMANCE BLOG</Link></li>
+              <li><Link href="/recipes" className="hover:text-primary transition-colors">RECIPE DATABASE</Link></li>
+              <li><Link href="/help" className="hover:text-primary transition-colors">SUPPORT</Link></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-serif font-bold mb-4 text-lg">Legal</h4>
-            <ul className="space-y-2 text-sm text-primary-foreground/80">
-              <li><Link href="/privacy" className="hover:text-white">Privacy Policy</Link></li>
-              <li><Link href="/terms" className="hover:text-white">Terms of Service</Link></li>
-              <li><Link href="/cookies" className="hover:text-white">Cookie Policy</Link></li>
+            <h4 className="font-bold tracking-widest uppercase mb-6 text-sm text-gray-500">Legal</h4>
+            <ul className="space-y-4 text-sm font-bold text-gray-400">
+              <li><Link href="/privacy" className="hover:text-white transition-colors">PRIVACY POLICY</Link></li>
+              <li><Link href="/terms" className="hover:text-white transition-colors">TERMS OF SERVICE</Link></li>
             </ul>
-            
-            <div className="mt-6 pt-6 border-t border-primary-light/30">
-               <div className="flex items-center gap-2 text-sm text-primary-foreground/80">
-                 <span>Language:</span>
-                 <select className="bg-transparent border-none focus:ring-0 font-medium cursor-pointer">
-                   <option value="en" className="text-black">English</option>
-                   <option value="es" className="text-black">Español</option>
-                   <option value="fr" className="text-black">Français</option>
-                 </select>
-               </div>
-            </div>
           </div>
         </div>
         
-        <div className="border-t border-primary-light/30 pt-8 text-center text-sm text-primary-foreground/60">
-          &copy; {new Date().getFullYear()} TailoredMealPlan.com. All rights reserved.
+        <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center text-xs font-bold text-gray-600 uppercase tracking-widest">
+          <p>&copy; {new Date().getFullYear()} TAILOREDMEALPLAN. ALL RIGHTS RESERVED.</p>
+          <div className="flex gap-4 mt-4 md:mt-0">
+             <span>ENGLISH</span>
+             <span>ESPAÑOL</span>
+          </div>
         </div>
       </div>
     </footer>

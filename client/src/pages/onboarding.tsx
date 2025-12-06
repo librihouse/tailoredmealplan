@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { ArrowLeft, Check } from "lucide-react";
 import { Link } from "wouter";
 
 export default function Onboarding() {
@@ -42,18 +40,18 @@ export default function Onboarding() {
 
   if (step > totalSteps) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-bg-cream">
+      <div className="min-h-screen flex items-center justify-center bg-black text-white">
         <div className="text-center space-y-6 p-8 max-w-md">
-          <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mx-auto animate-bounce">
+          <div className="w-24 h-24 bg-primary/20 rounded-full flex items-center justify-center mx-auto animate-bounce border-2 border-primary">
             <span className="text-4xl">🥗</span>
           </div>
-          <h2 className="font-serif text-3xl font-bold text-text-dark">Creating Your Perfect Plan...</h2>
-          <p className="text-muted-foreground">Our AI is analyzing 50+ data points to build your personalized weekly menu.</p>
-          <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 overflow-hidden">
-            <div className="bg-primary h-2.5 rounded-full animate-progress w-full origin-left duration-[3000ms] ease-linear transition-all"></div>
+          <h2 className="font-heading text-4xl font-bold uppercase">Creating Your Fuel Plan...</h2>
+          <p className="text-gray-400 text-lg">Our AI is analyzing 50+ biomarkers to build your perfect weekly menu.</p>
+          <div className="w-full bg-gray-800 rounded-full h-3 overflow-hidden border border-white/10">
+            <div className="bg-primary h-3 rounded-full animate-progress w-full origin-left duration-[3000ms] ease-linear transition-all"></div>
           </div>
           <Link href="/auth">
-            <Button className="w-full mt-8">Create Account to Save Plan</Button>
+            <Button className="w-full mt-8 bg-primary text-black font-bold h-12 uppercase tracking-wide hover:bg-primary/90">Create Account to Save Plan</Button>
           </Link>
         </div>
       </div>
@@ -61,50 +59,50 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="min-h-screen bg-bg-cream flex flex-col">
+    <div className="min-h-screen bg-black text-white flex flex-col">
       {/* Header / Progress */}
-      <div className="bg-white border-b sticky top-0 z-10">
+      <div className="bg-black border-b border-white/10 sticky top-0 z-50">
         <div className="container max-w-screen-md py-4 px-4 flex items-center justify-between">
            <div className="flex items-center gap-4">
              {step > 1 && (
-               <Button variant="ghost" size="icon" onClick={prevStep}>
+               <Button variant="ghost" size="icon" onClick={prevStep} className="text-white hover:text-primary hover:bg-white/10">
                  <ArrowLeft className="h-5 w-5" />
                </Button>
              )}
-             <span className="font-serif font-bold text-primary">TailoredMealPlan</span>
+             <span className="font-heading font-bold text-primary text-xl italic tracking-tighter">TAILORED<span className="text-white not-italic">MEALPLAN</span></span>
            </div>
-           <span className="text-sm font-medium text-muted-foreground">Step {step} of {totalSteps}</span>
+           <span className="text-sm font-bold text-gray-400 tracking-widest uppercase">Step {step} of {totalSteps}</span>
         </div>
-        <div className="h-1 bg-gray-100 w-full">
+        <div className="h-1 bg-gray-800 w-full">
           <div 
-            className="h-full bg-primary transition-all duration-500 ease-out" 
+            className="h-full bg-primary transition-all duration-500 ease-out shadow-[0_0_10px_rgba(132,204,22,0.5)]" 
             style={{ width: `${progress}%` }}
           ></div>
         </div>
       </div>
 
       <div className="flex-1 container max-w-screen-md px-4 py-8 md:py-12">
-        <Card className="border-none shadow-lg">
+        <Card className="border-white/10 bg-gray-900/50 backdrop-blur shadow-2xl text-white">
           <CardContent className="p-6 md:p-10">
             
             {/* Step 1: Basics */}
             {step === 1 && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+              <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
                 <div className="space-y-2">
-                  <h2 className="font-serif text-2xl md:text-3xl font-bold">Let's get to know you</h2>
-                  <p className="text-muted-foreground">Basic measurements help us calculate your caloric needs.</p>
+                  <h2 className="font-heading text-4xl font-bold uppercase">Let's get to know you</h2>
+                  <p className="text-gray-400 text-lg">Basic measurements help us calculate your caloric needs.</p>
                 </div>
                 
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <div>
-                    <Label className="mb-2 block">Gender</Label>
+                    <Label className="mb-4 block text-gray-300 uppercase tracking-wide font-bold">Gender</Label>
                     <RadioGroup defaultValue="female" onValueChange={(v) => setFormData({...formData, gender: v})} className="grid grid-cols-3 gap-4">
                       {["Female", "Male", "Other"].map((g) => (
                         <div key={g}>
                           <RadioGroupItem value={g.toLowerCase()} id={g.toLowerCase()} className="peer sr-only" />
                           <Label
                             htmlFor={g.toLowerCase()}
-                            className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-transparent p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:text-primary cursor-pointer transition-all"
+                            className="flex flex-col items-center justify-between rounded-none border border-white/20 bg-black/40 p-4 hover:bg-white/5 hover:border-primary/50 peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10 peer-data-[state=checked]:text-primary cursor-pointer transition-all font-bold uppercase tracking-wide"
                           >
                             {g}
                           </Label>
@@ -115,23 +113,23 @@ export default function Onboarding() {
 
                   <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label>Age</Label>
-                      <Input type="number" placeholder="25" />
+                      <Label className="text-gray-300 uppercase font-bold">Age</Label>
+                      <Input type="number" placeholder="25" className="bg-black/40 border-white/20 h-12 text-lg focus:border-primary" />
                     </div>
                     <div className="space-y-2">
-                      <Label>Height (cm)</Label>
-                      <Input type="number" placeholder="170" />
+                      <Label className="text-gray-300 uppercase font-bold">Height (cm)</Label>
+                      <Input type="number" placeholder="170" className="bg-black/40 border-white/20 h-12 text-lg focus:border-primary" />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label>Current Weight (kg)</Label>
-                      <Input type="number" placeholder="70" />
+                      <Label className="text-gray-300 uppercase font-bold">Current Weight (kg)</Label>
+                      <Input type="number" placeholder="70" className="bg-black/40 border-white/20 h-12 text-lg focus:border-primary" />
                     </div>
                     <div className="space-y-2">
-                      <Label>Target Weight (kg)</Label>
-                      <Input type="number" placeholder="65" />
+                      <Label className="text-gray-300 uppercase font-bold">Target Weight (kg)</Label>
+                      <Input type="number" placeholder="65" className="bg-black/40 border-white/20 h-12 text-lg focus:border-primary" />
                     </div>
                   </div>
                 </div>
@@ -140,10 +138,10 @@ export default function Onboarding() {
 
             {/* Step 2: Goals */}
             {step === 2 && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+              <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
                 <div className="space-y-2">
-                  <h2 className="font-serif text-2xl md:text-3xl font-bold">What is your main goal?</h2>
-                  <p className="text-muted-foreground">We'll adjust your macros to help you get there.</p>
+                  <h2 className="font-heading text-4xl font-bold uppercase">What is your main goal?</h2>
+                  <p className="text-gray-400 text-lg">We'll adjust your macros to help you get there.</p>
                 </div>
                 
                 <RadioGroup defaultValue="lose_weight" onValueChange={(v) => setFormData({...formData, goal: v})} className="space-y-3">
@@ -153,13 +151,13 @@ export default function Onboarding() {
                     { id: "maintain", label: "Maintain Weight", desc: "Stay healthy and fit" },
                     { id: "health", label: "Improve Health", desc: "Focus on nutrition quality" }
                   ].map((goal) => (
-                    <div key={goal.id} className="relative flex items-center space-x-2 border rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors">
-                      <RadioGroupItem value={goal.id} id={goal.id} />
-                      <div className="grid gap-1.5 leading-none cursor-pointer w-full pl-2">
-                        <Label htmlFor={goal.id} className="font-bold cursor-pointer text-lg">
+                    <div key={goal.id} className="relative flex items-center space-x-4 border border-white/20 rounded-none p-6 hover:bg-white/5 cursor-pointer transition-colors group has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                      <RadioGroupItem value={goal.id} id={goal.id} className="border-white/50 text-primary" />
+                      <div className="grid gap-1.5 leading-none cursor-pointer w-full">
+                        <Label htmlFor={goal.id} className="font-bold cursor-pointer text-xl uppercase tracking-wide group-has-[:checked]:text-primary transition-colors">
                           {goal.label}
                         </Label>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-gray-400 group-has-[:checked]:text-gray-300">
                           {goal.desc}
                         </p>
                       </div>
@@ -171,10 +169,10 @@ export default function Onboarding() {
 
             {/* Step 3: Activity */}
             {step === 3 && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+              <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
                 <div className="space-y-2">
-                  <h2 className="font-serif text-2xl md:text-3xl font-bold">How active are you?</h2>
-                  <p className="text-muted-foreground">Be honest! This changes your calorie budget significantly.</p>
+                  <h2 className="font-heading text-4xl font-bold uppercase">How active are you?</h2>
+                  <p className="text-gray-400 text-lg">Be honest! This changes your calorie budget significantly.</p>
                 </div>
 
                 <RadioGroup defaultValue="moderate" onValueChange={(v) => setFormData({...formData, activity: v})} className="space-y-3">
@@ -185,13 +183,13 @@ export default function Onboarding() {
                     { id: "active", label: "Very Active", desc: "Hard exercise 6-7 days/week" },
                     { id: "athlete", label: "Extra Active", desc: "Physical job or athletic training" }
                   ].map((level) => (
-                    <div key={level.id} className="relative flex items-center space-x-2 border rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors">
-                      <RadioGroupItem value={level.id} id={level.id} />
-                      <div className="grid gap-1.5 leading-none cursor-pointer w-full pl-2">
-                        <Label htmlFor={level.id} className="font-bold cursor-pointer text-lg">
+                    <div key={level.id} className="relative flex items-center space-x-4 border border-white/20 rounded-none p-6 hover:bg-white/5 cursor-pointer transition-colors group has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                      <RadioGroupItem value={level.id} id={level.id} className="border-white/50 text-primary" />
+                      <div className="grid gap-1.5 leading-none cursor-pointer w-full">
+                        <Label htmlFor={level.id} className="font-bold cursor-pointer text-xl uppercase tracking-wide group-has-[:checked]:text-primary transition-colors">
                           {level.label}
                         </Label>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-gray-400 group-has-[:checked]:text-gray-300">
                           {level.desc}
                         </p>
                       </div>
@@ -203,10 +201,10 @@ export default function Onboarding() {
 
             {/* Step 4: Dietary Preference */}
             {step === 4 && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+              <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
                 <div className="space-y-2">
-                  <h2 className="font-serif text-2xl md:text-3xl font-bold">Any dietary preferences?</h2>
-                  <p className="text-muted-foreground">Select all that apply.</p>
+                  <h2 className="font-heading text-4xl font-bold uppercase">Any dietary preferences?</h2>
+                  <p className="text-gray-400 text-lg">Select all that apply.</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -219,16 +217,16 @@ export default function Onboarding() {
                       key={diet}
                       onClick={() => toggleSelection("diet", diet)}
                       className={cn(
-                        "flex items-center justify-between p-4 rounded-lg border-2 cursor-pointer transition-all",
-                        formData.diet.includes(diet) ? "border-primary bg-primary/5" : "border-muted hover:border-primary/50"
+                        "flex items-center justify-between p-4 rounded-none border cursor-pointer transition-all",
+                        formData.diet.includes(diet) ? "border-primary bg-primary/10 text-primary" : "border-white/20 hover:border-primary/50 hover:bg-white/5"
                       )}
                     >
-                      <span className="font-medium">{diet}</span>
+                      <span className="font-bold uppercase tracking-wide text-sm">{diet}</span>
                       {formData.diet.includes(diet) && <Check className="h-5 w-5 text-primary" />}
                     </div>
                   ))}
                 </div>
-                <div className="flex items-center gap-2 p-4 bg-gray-50 rounded-lg text-sm text-muted-foreground">
+                <div className="flex items-center gap-2 p-4 bg-white/5 border border-white/10 text-sm text-gray-400 italic">
                    <span>Note: Select "None" by not checking anything if you have no restrictions.</span>
                 </div>
               </div>
@@ -236,10 +234,10 @@ export default function Onboarding() {
 
             {/* Step 5: Religious/Cultural */}
             {step === 5 && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+              <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
                 <div className="space-y-2">
-                  <h2 className="font-serif text-2xl md:text-3xl font-bold">Religious or Cultural Needs?</h2>
-                  <p className="text-muted-foreground">We strictly adhere to these requirements.</p>
+                  <h2 className="font-heading text-4xl font-bold uppercase">Religious or Cultural Needs?</h2>
+                  <p className="text-gray-400 text-lg">We strictly adhere to these requirements.</p>
                 </div>
 
                 <RadioGroup defaultValue="none" onValueChange={(v) => setFormData({...formData, religious: v})} className="space-y-3">
@@ -251,13 +249,13 @@ export default function Onboarding() {
                     { id: "hindu", label: "Hindu Vegetarian", desc: "No meat, fish, eggs (lacto-vegetarian)" },
                     { id: "buddhist", label: "Buddhist", desc: "Often vegetarian, avoiding pungent spices" }
                   ].map((rel) => (
-                    <div key={rel.id} className="relative flex items-center space-x-2 border rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors">
-                      <RadioGroupItem value={rel.id} id={rel.id} />
-                      <div className="grid gap-1.5 leading-none cursor-pointer w-full pl-2">
-                        <Label htmlFor={rel.id} className="font-bold cursor-pointer text-lg">
+                    <div key={rel.id} className="relative flex items-center space-x-4 border border-white/20 rounded-none p-6 hover:bg-white/5 cursor-pointer transition-colors group has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                      <RadioGroupItem value={rel.id} id={rel.id} className="border-white/50 text-primary" />
+                      <div className="grid gap-1.5 leading-none cursor-pointer w-full">
+                        <Label htmlFor={rel.id} className="font-bold cursor-pointer text-xl uppercase tracking-wide group-has-[:checked]:text-primary transition-colors">
                           {rel.label}
                         </Label>
-                        {rel.desc && <p className="text-sm text-muted-foreground">{rel.desc}</p>}
+                        {rel.desc && <p className="text-sm text-gray-400 group-has-[:checked]:text-gray-300 mt-1">{rel.desc}</p>}
                       </div>
                     </div>
                   ))}
@@ -267,10 +265,10 @@ export default function Onboarding() {
 
             {/* Step 6: Conditions */}
             {step === 6 && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+              <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
                 <div className="space-y-2">
-                  <h2 className="font-serif text-2xl md:text-3xl font-bold">Health Conditions</h2>
-                  <p className="text-muted-foreground">Do you have any conditions we should account for?</p>
+                  <h2 className="font-heading text-4xl font-bold uppercase">Health Conditions</h2>
+                  <p className="text-gray-400 text-lg">Do you have any conditions we should account for?</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -283,11 +281,11 @@ export default function Onboarding() {
                       key={cond}
                       onClick={() => toggleSelection("conditions", cond)}
                       className={cn(
-                        "flex items-center justify-between p-4 rounded-lg border-2 cursor-pointer transition-all",
-                        formData.conditions.includes(cond) ? "border-primary bg-primary/5" : "border-muted hover:border-primary/50"
+                        "flex items-center justify-between p-4 rounded-none border cursor-pointer transition-all",
+                        formData.conditions.includes(cond) ? "border-primary bg-primary/10 text-primary" : "border-white/20 hover:border-primary/50 hover:bg-white/5"
                       )}
                     >
-                      <span className="font-medium">{cond}</span>
+                      <span className="font-bold uppercase tracking-wide text-sm">{cond}</span>
                       {formData.conditions.includes(cond) && <Check className="h-5 w-5 text-primary" />}
                     </div>
                   ))}
@@ -297,10 +295,10 @@ export default function Onboarding() {
 
             {/* Step 7: Allergies */}
             {step === 7 && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+              <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
                 <div className="space-y-2">
-                  <h2 className="font-serif text-2xl md:text-3xl font-bold">Any Allergies?</h2>
-                  <p className="text-muted-foreground">We'll exclude any recipes containing these ingredients.</p>
+                  <h2 className="font-heading text-4xl font-bold uppercase">Any Allergies?</h2>
+                  <p className="text-gray-400 text-lg">We'll exclude any recipes containing these ingredients.</p>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -313,11 +311,11 @@ export default function Onboarding() {
                       key={allergy}
                       onClick={() => toggleSelection("allergies", allergy)}
                       className={cn(
-                        "flex items-center justify-between p-4 rounded-lg border-2 cursor-pointer transition-all",
-                        formData.allergies.includes(allergy) ? "border-destructive/50 bg-destructive/5" : "border-muted hover:border-destructive/30"
+                        "flex items-center justify-between p-4 rounded-none border cursor-pointer transition-all",
+                        formData.allergies.includes(allergy) ? "border-destructive/50 bg-destructive/10 text-destructive" : "border-white/20 hover:border-destructive/50 hover:bg-white/5"
                       )}
                     >
-                      <span className="font-medium">{allergy}</span>
+                      <span className="font-bold uppercase tracking-wide text-sm">{allergy}</span>
                       {formData.allergies.includes(allergy) && <Check className="h-5 w-5 text-destructive" />}
                     </div>
                   ))}
@@ -330,10 +328,10 @@ export default function Onboarding() {
              {step === 1 ? (
                <Button variant="ghost" disabled className="invisible">Back</Button>
              ) : (
-               <Button variant="outline" onClick={prevStep}>Back</Button>
+               <Button variant="outline" onClick={prevStep} className="border-white/20 text-white hover:bg-white/10 font-bold uppercase tracking-wide">Back</Button>
              )}
              
-             <Button onClick={nextStep} className="bg-primary hover:bg-primary-light text-white px-8">
+             <Button onClick={nextStep} className="bg-primary hover:bg-primary/90 text-black px-10 h-12 font-bold uppercase tracking-widest rounded-none">
                {step === totalSteps ? "Generate Plan" : "Next"}
              </Button>
           </CardFooter>

@@ -1,77 +1,76 @@
-import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { ArrowRight, CheckCircle, Star } from "lucide-react";
-import heroImage from "@assets/generated_images/a_beautiful,_healthy_meal_spread_for_a_nutrition_app_hero_section..png";
+import { Button } from "@/components/ui/button";
+import { ArrowRight, Play } from "lucide-react";
+import heroVideo from "@assets/generated_videos/diverse_fit_people_eating_healthy_in_a_modern_wellness_cafe.mp4";
+import { motion } from "framer-motion";
 
 export function Hero() {
   return (
-    <section className="relative pt-12 pb-20 md:pt-20 md:pb-32 overflow-hidden bg-bg-cream">
-      <div className="container max-w-screen-2xl px-4 md:px-8">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <div className="space-y-8 z-10">
-            <div className="inline-flex items-center rounded-full border border-primary/20 bg-primary/5 px-3 py-1 text-sm font-medium text-primary backdrop-blur-sm">
-              <span className="flex h-2 w-2 rounded-full bg-primary mr-2 animate-pulse"></span>
-              AI-Powered Nutrition
-            </div>
-            
-            <h1 className="font-serif text-4xl md:text-6xl font-bold leading-tight text-text-dark">
-              Your Perfect Meal Plan, <span className="text-primary relative">
-                Tailored
-                <svg className="absolute w-full h-3 -bottom-1 left-0 text-accent/40 -z-10" viewBox="0 0 100 10" preserveAspectRatio="none">
-                   <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="8" fill="none" />
-                </svg>
-              </span> Just for You
-            </h1>
-            
-            <p className="text-lg md:text-xl text-muted-foreground max-w-lg leading-relaxed">
-              AI-powered nutrition plans that respect your dietary needs, health goals, and cultural preferences. Whether you're vegan, keto, or halal—we've got you covered.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link href="/onboarding">
-                <Button size="lg" className="bg-primary hover:bg-primary-light text-white h-12 px-8 text-lg rounded-full shadow-xl shadow-primary/20 transition-all hover:scale-105">
-                  Get Your Free Meal Plan
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-              <Link href="/professionals">
-                <Button variant="outline" size="lg" className="h-12 px-8 text-lg rounded-full border-primary/20 text-primary hover:bg-primary/5">
-                  For Professionals
-                </Button>
-              </Link>
-            </div>
+    <section className="relative h-[90vh] min-h-[600px] w-full overflow-hidden bg-black text-white">
+      {/* Background Video */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-black/40 z-10"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/60 z-10"></div>
+        <video 
+          autoPlay 
+          loop 
+          muted 
+          playsInline 
+          className="h-full w-full object-cover opacity-80"
+        >
+          <source src={heroVideo} type="video/mp4" />
+        </video>
+      </div>
 
-            <div className="flex items-center gap-6 pt-4 text-sm font-medium text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-accent" />
-                <span>10,000+ Plans Created</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-accent" />
-                <span>50+ Diet Types</span>
-              </div>
-            </div>
+      <div className="container relative z-20 flex h-full max-w-screen-2xl flex-col justify-center px-4 md:px-8 pt-20">
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="max-w-4xl"
+        >
+          <div className="inline-flex items-center gap-2 border border-primary/50 bg-black/50 px-4 py-2 backdrop-blur-md mb-8">
+            <span className="h-2 w-2 rounded-full bg-primary animate-pulse"></span>
+            <span className="font-bold text-sm tracking-widest text-primary uppercase">AI-Powered Nutrition</span>
           </div>
+          
+          <h1 className="font-heading text-6xl md:text-8xl font-bold uppercase leading-[0.9] tracking-tight mb-8">
+            Fuel Your <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">Ambition</span>
+          </h1>
+          
+          <p className="max-w-xl text-lg md:text-xl font-medium text-gray-200 mb-10 leading-relaxed">
+            Stop guessing. Start fueling. Personalized meal plans built for your biology, your goals, and your culture.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-6">
+            <Link href="/onboarding">
+              <Button size="lg" className="h-16 px-10 bg-primary hover:bg-primary/90 text-black text-lg font-bold tracking-wider rounded-none skew-x-[-10deg] group transition-transform hover:scale-105">
+                <span className="skew-x-[10deg] flex items-center">
+                  GENERATE PLAN <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                </span>
+              </Button>
+            </Link>
+            
+            <button className="group flex items-center gap-4 text-white font-bold hover:text-primary transition-colors">
+              <div className="flex h-16 w-16 items-center justify-center border border-white/30 bg-white/10 backdrop-blur-sm rounded-full group-hover:bg-primary group-hover:border-primary group-hover:text-black transition-all">
+                <Play className="h-6 w-6 fill-current ml-1" />
+              </div>
+              <span className="tracking-widest text-sm">WATCH FILM</span>
+            </button>
+          </div>
+        </motion.div>
+      </div>
 
-          <div className="relative lg:h-[600px] w-full flex items-center justify-center">
-             <div className="absolute inset-0 bg-accent/10 rounded-full blur-3xl transform rotate-12 scale-75 opacity-60"></div>
-             <img 
-               src={heroImage} 
-               alt="Healthy meal spread" 
-               className="relative rounded-2xl shadow-2xl transform rotate-3 hover:rotate-0 transition-transform duration-700 ease-out object-cover w-full max-w-md lg:max-w-full h-auto border-8 border-white"
-             />
-             
-             {/* Floating Badge */}
-             <div className="absolute -bottom-6 -left-6 md:bottom-10 md:left-0 bg-white p-4 rounded-xl shadow-lg border border-border/40 flex items-center gap-3 animate-in slide-in-from-bottom-10 duration-1000 delay-300">
-               <div className="bg-primary/10 p-2 rounded-full text-primary">
-                 <Star className="h-6 w-6 fill-current" />
-               </div>
-               <div>
-                 <p className="font-bold text-text-dark">4.9/5 Rating</p>
-                 <p className="text-xs text-muted-foreground">from 2,000+ reviews</p>
-               </div>
-             </div>
-          </div>
+      {/* Scrolling Ticker */}
+      <div className="absolute bottom-0 w-full border-t border-white/10 bg-black/80 backdrop-blur-md py-4 overflow-hidden z-20">
+        <div className="flex whitespace-nowrap animate-infinite-scroll">
+          {[...Array(10)].map((_, i) => (
+            <div key={i} className="flex items-center mx-8">
+              <span className="text-primary font-bold mx-4">★</span>
+              <span className="text-sm font-bold tracking-[0.2em] text-white/70">CULTURE • SCIENCE • PERFORMANCE • TASTE •</span>
+            </div>
+          ))}
         </div>
       </div>
     </section>

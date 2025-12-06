@@ -1,117 +1,197 @@
 import { Layout } from "@/components/Layout";
 import { Hero } from "@/components/Hero";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  ClipboardList, 
-  Wand2, 
-  Utensils, 
-  TrendingUp,
-  Leaf,
-  Heart,
-  Globe,
-  ShieldCheck
-} from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { motion } from "framer-motion";
+import { ArrowRight, Flame, Droplets, Trophy, Globe, Heart } from "lucide-react";
 import { Link } from "wouter";
 
+// Stock Images
+import imgDiverse from "@assets/stock_images/diverse_group_of_fit_366fe9ff.jpg";
+import imgBowl from "@assets/stock_images/close_up_delicious_h_eb7900ea.jpg";
+import imgIndian from "@assets/stock_images/indian_healthy_veget_787c2b3b.jpg";
+import imgMed from "@assets/stock_images/mediterranean_diet_s_2ac4209c.jpg";
+
 export default function Home() {
+  const fadeInUp = {
+    hidden: { opacity: 0, y: 60 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
+  } as const;
+
+  const staggerContainer = {
+    visible: { transition: { staggerChildren: 0.1 } }
+  };
+
   return (
     <Layout>
       <Hero />
       
-      {/* How It Works Section */}
-      <section className="py-20 bg-white">
+      {/* Mission / High Energy Section */}
+      <section className="bg-black text-white py-24 md:py-32">
         <div className="container max-w-screen-2xl px-4 md:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="font-serif text-3xl md:text-4xl font-bold text-text-dark mb-4">How It Works</h2>
-            <p className="text-muted-foreground text-lg">Get your personalized nutrition plan in 4 simple steps</p>
-          </div>
-
-          <div className="grid md:grid-cols-4 gap-8 relative">
-            {/* Connecting Line (Desktop) */}
-            <div className="hidden md:block absolute top-12 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-primary/20 to-transparent -z-10"></div>
-
-            {[
-              { icon: ClipboardList, title: "Tell Us About You", desc: "Share your goals, dietary needs, and preferences." },
-              { icon: Wand2, title: "AI Creates Plan", desc: "Our AI analyzes 50+ factors to build your perfect plan." },
-              { icon: Utensils, title: "Enjoy Meals", desc: "Get delicious, easy-to-follow recipes every week." },
-              { icon: TrendingUp, title: "Track Progress", desc: "Monitor your health improvements and adjust as needed." }
-            ].map((step, i) => (
-              <div key={i} className="flex flex-col items-center text-center group">
-                <div className="w-24 h-24 bg-bg-sage rounded-full flex items-center justify-center mb-6 group-hover:bg-primary/10 transition-colors relative">
-                  <step.icon className="h-10 w-10 text-primary" />
-                  <div className="absolute -top-2 -right-2 w-8 h-8 bg-accent rounded-full flex items-center justify-center text-white font-bold font-mono shadow-sm">
-                    {i + 1}
-                  </div>
+          <div className="grid md:grid-cols-2 gap-16 items-center">
+            <motion.div 
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={fadeInUp}
+            >
+              <h2 className="font-heading text-5xl md:text-7xl font-bold uppercase leading-none mb-8">
+                Eat Like <br />
+                <span className="text-primary">You Give a Damn.</span>
+              </h2>
+              <p className="text-xl text-gray-400 mb-8 leading-relaxed">
+                Generic meal plans are dead. You need nutrition that understands your DNA, your gym schedule, and your grandma's recipes. We combine hardcore science with real food culture.
+              </p>
+              
+              <div className="grid grid-cols-2 gap-8 mb-10">
+                <div>
+                  <h3 className="text-3xl font-bold text-white mb-2">10k+</h3>
+                  <p className="text-sm text-gray-500 font-bold tracking-widest uppercase">Athletes Fueled</p>
                 </div>
-                <h3 className="font-serif text-xl font-bold mb-2 text-text-dark">{step.title}</h3>
-                <p className="text-muted-foreground">{step.desc}</p>
+                <div>
+                  <h3 className="text-3xl font-bold text-white mb-2">50+</h3>
+                  <p className="text-sm text-gray-500 font-bold tracking-widest uppercase">Cuisines</p>
+                </div>
               </div>
-            ))}
+
+              <Link href="/features">
+                <Button variant="outline" className="border-white/20 text-white hover:bg-white hover:text-black h-14 px-8 font-bold tracking-wide rounded-none uppercase">
+                  Explore Features
+                </Button>
+              </Link>
+            </motion.div>
+
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+              className="relative"
+            >
+              <div className="aspect-[4/5] w-full overflow-hidden bg-gray-900">
+                <img src={imgDiverse} alt="Fit diverse group" className="h-full w-full object-cover opacity-90 hover:scale-105 transition-transform duration-700" />
+              </div>
+              <div className="absolute -bottom-10 -left-10 w-2/3 border-4 border-black">
+                 <img src={imgBowl} alt="Healthy Bowl" className="w-full object-cover" />
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
 
-      {/* Features Grid */}
-      <section className="py-20 bg-bg-sage/30">
+      {/* Cultural Inclusion / Food Grid */}
+      <section className="bg-white text-black py-24 md:py-32 overflow-hidden">
         <div className="container max-w-screen-2xl px-4 md:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="font-serif text-3xl md:text-4xl font-bold text-text-dark mb-4">Why Choose TailoredMealPlan?</h2>
-            <p className="text-muted-foreground text-lg">We don't just count calories. We understand culture, taste, and lifestyle.</p>
-          </div>
+          <motion.div 
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={fadeInUp}
+            className="text-center max-w-3xl mx-auto mb-20"
+          >
+            <span className="text-primary font-bold tracking-widest uppercase mb-4 block">No More Chicken & Broccoli</span>
+            <h2 className="font-heading text-5xl md:text-7xl font-bold uppercase mb-6 text-black">
+              Culture on <br /> Your Plate
+            </h2>
+            <p className="text-xl text-gray-600">
+              Whether you eat Halal, Kosher, Vegan, or Spicy Szechuan—our AI builds your macros around the food you actually love.
+            </p>
+          </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <motion.div 
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={staggerContainer}
+            className="grid md:grid-cols-3 gap-8"
+          >
             {[
-              { icon: Heart, title: "Health Condition Support", desc: "Plans adapted for Diabetes, PCOS, Hypertension, and more." },
-              { icon: ShieldCheck, title: "Religious Compliance", desc: "Strictly Halal, Kosher, Jain, and Hindu vegetarian options." },
-              { icon: Globe, title: "Global Cuisines", desc: "Enjoy Mediterranean, Asian, Indian, Mexican, or local favorites." },
-              { icon: Leaf, title: "Special Diets", desc: "Keto, Paleo, Vegan, Low-FODMAP, and allergen-free plans." },
-              { icon: ClipboardList, title: "Smart Grocery Lists", desc: "Automated shopping lists organized by store aisle." },
-              { icon: TrendingUp, title: "Progress Tracking", desc: "Track weight, energy levels, and water intake easily." }
-            ].map((feature, i) => (
-              <Card key={i} className="border-none shadow-sm hover:shadow-md transition-shadow bg-white">
-                <CardHeader>
-                  <feature.icon className="h-8 w-8 text-primary mb-2" />
-                  <CardTitle className="font-serif text-xl">{feature.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">{feature.desc}</p>
-                </CardContent>
-              </Card>
+              { img: imgIndian, title: "South Asian", desc: "High protein vegetarian thalis & curries." },
+              { img: imgMed, title: "Mediterranean", desc: "Heart-healthy fats, seafood & fresh greens." },
+              { img: imgBowl, title: "Modern Fusion", desc: "Macro-balanced bowls for the busy athlete." }
+            ].map((item, i) => (
+              <motion.div key={i} variants={fadeInUp} className="group cursor-pointer">
+                <div className="aspect-[4/3] overflow-hidden mb-6 bg-gray-100">
+                  <img src={item.img} alt={item.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                </div>
+                <h3 className="font-heading text-3xl font-bold uppercase mb-2 group-hover:text-primary transition-colors">{item.title}</h3>
+                <p className="text-gray-600 font-medium">{item.desc}</p>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* Persona Cards */}
-      <section className="py-20 bg-primary text-white">
-        <div className="container max-w-screen-2xl px-4 md:px-8">
-          <div className="text-center mb-16">
-             <h2 className="font-serif text-3xl md:text-4xl font-bold mb-4">Nutrition for Everyone</h2>
-             <p className="text-primary-foreground/80 text-lg">Find the plan that fits your life stage and goals.</p>
-          </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {["Weight Loss", "Muscle Gain", "Health Mgmt", "Lifestyle", "Religious", "Families"].map((persona, i) => (
-              <div key={i} className="bg-white/10 backdrop-blur-sm rounded-xl p-6 text-center hover:bg-white/20 transition-colors cursor-pointer border border-white/10">
-                <div className="font-serif font-bold text-lg mb-1">{persona}</div>
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* Steps / Dark Mode */}
+      <section className="bg-gray-900 text-white py-24 md:py-32">
+         <div className="container max-w-screen-2xl px-4 md:px-8">
+            <div className="grid lg:grid-cols-2 gap-20">
+              <motion.div
+                 initial="hidden"
+                 whileInView="visible"
+                 viewport={{ once: true }}
+                 variants={fadeInUp}
+              >
+                 <h2 className="font-heading text-5xl md:text-6xl font-bold uppercase mb-12">
+                   The <span className="text-primary">Algorithm</span>
+                 </h2>
+                 
+                 <div className="space-y-12">
+                   {[
+                     { icon: Globe, title: "01. Input Your Profile", desc: "Age, weight, goals, and cultural background." },
+                     { icon: Flame, title: "02. AI Calculation", desc: "We crunch 50+ biomarkers to find your perfect fuel mix." },
+                     { icon: Trophy, title: "03. Execute & Win", desc: "Get a weekly grocery list and recipes. Hit your PRs." }
+                   ].map((step, i) => (
+                     <div key={i} className="flex gap-6 group">
+                       <div className="h-16 w-16 shrink-0 border border-white/20 flex items-center justify-center rounded-full group-hover:border-primary group-hover:bg-primary group-hover:text-black transition-all duration-300">
+                         <step.icon className="h-8 w-8" />
+                       </div>
+                       <div>
+                         <h3 className="font-heading text-2xl font-bold uppercase mb-2">{step.title}</h3>
+                         <p className="text-gray-400">{step.desc}</p>
+                       </div>
+                     </div>
+                   ))}
+                 </div>
+              </motion.div>
+
+              <motion.div 
+                 initial={{ opacity: 0, x: 50 }}
+                 whileInView={{ opacity: 1, x: 0 }}
+                 viewport={{ once: true }}
+                 transition={{ duration: 0.8 }}
+                 className="bg-primary rounded-3xl p-1 lg:rotate-3 hover:rotate-0 transition-transform duration-500"
+              >
+                 <div className="bg-black h-full w-full rounded-[20px] overflow-hidden relative">
+                    <img src={imgDiverse} className="w-full h-full object-cover opacity-60 grayscale hover:grayscale-0 transition-all duration-700" alt="App Preview" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                       <Link href="/onboarding">
+                         <Button size="lg" className="bg-white text-black hover:bg-white/90 font-bold h-20 w-20 rounded-full">
+                           GO
+                         </Button>
+                       </Link>
+                    </div>
+                 </div>
+              </motion.div>
+            </div>
+         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 bg-bg-cream text-center">
-        <div className="container max-w-lg mx-auto px-4">
-          <h2 className="font-serif text-4xl font-bold text-text-dark mb-6">Ready to transform your health?</h2>
-          <p className="text-muted-foreground mb-8 text-lg">Join 10,000+ users who have discovered the power of personalized nutrition.</p>
+      {/* CTA */}
+      <section className="bg-primary py-32 text-center">
+        <div className="container px-4">
+          <h2 className="font-heading text-6xl md:text-9xl font-bold uppercase leading-none mb-8 text-black">
+            Start Now
+          </h2>
+          <p className="text-xl md:text-2xl text-black/80 font-bold mb-12 max-w-2xl mx-auto">
+            Your body is a machine. Stop fueling it with garbage.
+          </p>
           <Link href="/onboarding">
-            <Button size="lg" className="bg-primary hover:bg-primary-light text-white h-14 px-10 text-xl rounded-full shadow-xl shadow-primary/20 w-full sm:w-auto">
-              Get Started for Free
-            </Button>
+             <Button className="bg-black text-white hover:bg-black/80 h-20 px-16 text-xl font-bold uppercase tracking-widest rounded-none">
+               Build My Plan
+             </Button>
           </Link>
-          <p className="mt-4 text-sm text-muted-foreground">No credit card required for free plan.</p>
         </div>
       </section>
     </Layout>
