@@ -1,0 +1,1253 @@
+# TailoredMealPlan.com - Complete Frontend Design Prompt for Replit
+
+## Project Overview
+
+Design a complete frontend for **TailoredMealPlan.com** - an AI-powered personalized meal planning SaaS application. This is a **design-only phase** - no backend functionality required. Use placeholder data, mock states, and static content throughout.
+
+**Tech Stack for Design:**
+- React + Vite (or Next.js)
+- Tailwind CSS
+- Lucide React icons
+- Framer Motion for animations
+- React Router for navigation
+
+---
+
+## Brand Identity
+
+### Brand Name
+**TailoredMealPlan.com**
+
+### Tagline
+"AI-Powered Personalized Nutrition for Everyone"
+
+### Color Palette
+```css
+/* Primary - Nature/Health inspired greens */
+--primary: #2D5A3D;
+--primary-light: #4A7C5C;
+--primary-dark: #1E3D2A;
+
+/* Accent - Warm, appetizing gold */
+--accent: #E8A54B;
+--accent-hover: #D4932F;
+
+/* Backgrounds */
+--bg-cream: #FBF9F4;
+--bg-sage: #E8EDE6;
+--white: #FFFFFF;
+
+/* Text */
+--text-dark: #1A2E23;
+--text-muted: #5A6B5E;
+
+/* B2B specific blues */
+--b2b-primary: #1E3A5F;
+--b2b-accent: #3D7CC9;
+
+/* Status colors */
+--success: #22C55E;
+--warning: #F59E0B;
+--error: #EF4444;
+```
+
+### Typography
+- **Headings:** Playfair Display (serif) - elegant, trustworthy
+- **Body:** DM Sans (sans-serif) - clean, readable
+- **Accent/Numbers:** Space Grotesk (for stats, prices)
+
+### Design Tone
+- Clean, modern, health-focused
+- Warm and welcoming (not clinical)
+- Professional but approachable
+- Food imagery should look appetizing and fresh
+- Use subtle food/leaf patterns as decorative elements
+
+---
+
+## Target Users
+
+### B2C Users
+- Health enthusiasts
+- Gym-goers, yoga practitioners, marathon runners
+- People with obesity/weight management goals
+- Individuals with specific dietary needs (medical, religious, lifestyle)
+
+### B2B Users
+- Nutritionists and dietitians
+- Doctors and medical practitioners
+- Fitness influencers
+- Gyms and fitness centers
+- Health clinics
+
+---
+
+## Pages to Design
+
+### 1. PUBLIC PAGES (No Login Required)
+
+#### 1.1 Landing Page / Homepage
+**Sections to include:**
+
+**Hero Section:**
+- Headline: "Your Perfect Meal Plan, Tailored Just for You"
+- Subheadline: "AI-powered nutrition plans that respect your dietary needs, health goals, and cultural preferences"
+- CTA buttons: "Get Your Free Meal Plan" (primary) | "For Professionals" (secondary)
+- Hero image: Beautiful, diverse meal spread
+- Trust badges: "10,000+ meal plans created" | "50+ dietary preferences" | "Available in 20+ languages"
+
+**How It Works Section:**
+- Step 1: "Tell Us About You" - Icon of questionnaire
+- Step 2: "AI Creates Your Plan" - Icon of AI/magic wand
+- Step 3: "Enjoy Personalized Meals" - Icon of happy person eating
+- Step 4: "Track Your Progress" - Icon of chart going up
+
+**Features Section:**
+- Personalized to your health conditions
+- Supports all religious diets (Halal, Kosher, Jain vegetarian, Hindu vegetarian)
+- Regional cuisine options (Mediterranean, Asian, Indian, Mexican, etc.)
+- Special diets (Vegan, Keto, Paleo, Low-sodium, Diabetic-friendly)
+- Detailed recipes with nutritional breakdown
+- Smart grocery lists
+- Multi-language support
+- Progress tracking
+
+**Who It's For Section:**
+- Card 1: "Weight Loss Warriors" - For those targeting healthy weight reduction
+- Card 2: "Muscle Builders" - For gym enthusiasts and athletes
+- Card 3: "Health Managers" - For those with diabetes, heart conditions, etc.
+- Card 4: "Lifestyle Dieters" - For vegan, keto, Mediterranean followers
+- Card 5: "Religious Observers" - Halal, Kosher, Jain-compliant meals
+- Card 6: "Busy Families" - Quick, nutritious family meals
+
+**Testimonials Section:**
+- 3-4 mock testimonials with photos, names, and their dietary type
+- Star ratings
+- Before/after type stories (weight loss, energy improvement)
+
+**Pricing Preview Section:**
+- Simple 3-card preview: Free | Individual $9/mo | Family $19/mo
+- "View All Plans" link
+- "For Business Pricing" link
+
+**FAQ Section:**
+- Collapsible FAQ items
+- Questions about dietary options, how AI works, cancellation, etc.
+
+**Footer:**
+- Logo and tagline
+- Navigation links
+- Social media icons
+- Language/Currency selector
+- Legal links (Privacy, Terms, etc.)
+
+---
+
+#### 1.2 Pricing Page
+**Two tabs or toggle:** B2C Plans | B2B Plans
+
+**B2C Section:**
+Three pricing cards:
+
+**Free Tier - $0**
+- 1 meal plan (lifetime, one-time)
+- Basic questionnaire
+- Recipes with ingredients
+- Nutritional breakdown
+- Watermark on exports
+- ❌ Grocery lists
+- ❌ Progress tracking
+- ❌ AI chat support
+- CTA: "Get Started Free"
+
+**Individual - $9/month** (Most Popular badge)
+- 50 meal plans/month
+- Daily, weekly, monthly plans
+- Full dietary customization
+- All religious diet options
+- Medical conditions support
+- Detailed recipes & timing
+- ✅ Grocery lists
+- ✅ Progress tracking
+- ✅ AI chat support
+- Multi-language support
+- No watermarks
+- CTA: "Start 7-Day Trial"
+- Annual option: $89/year (save 18%)
+
+**Family - $19/month**
+- Everything in Individual
+- Up to 5 family members
+- 50 plans/month per member
+- Individual profiles & goals
+- Family meal coordination
+- Shared grocery lists
+- Family dashboard
+- Priority support
+- CTA: "Choose Family"
+- Annual option: $179/year (save 21%)
+
+**Add-ons strip:**
+- Extra 10 meal plans: $1.99
+- Premium recipes: $2.99/mo
+- Calorie sync (fitness apps): $1.99/mo
+
+**B2B Section:**
+Three pricing cards:
+
+**Starter - $49/month**
+- Up to 100 clients
+- 200 meal plans/month
+- Basic white-labeling
+- PDF export with logo
+- Client dashboard
+- Email delivery
+- Email support
+
+**Professional - $129/month** (Most Popular badge)
+- Up to 500 clients
+- 1,500 meal plans/month
+- Full white-labeling
+- Custom branding & signature
+- Client progress tracking
+- Bulk plan generation
+- 3 team seats
+- Priority support
+- Analytics dashboard
+
+**Enterprise - $349/month**
+- Up to 2,000 clients
+- 6,000 meal plans/month
+- Complete white-labeling
+- Custom domain support
+- Unlimited team members
+- Advanced analytics
+- Dedicated account manager
+- Phone & video support
+- Custom integrations
+
+**B2B Add-ons strip:**
+- +100 clients: $19/mo
+- +500 clients: $79/mo
+- +100 meal plans: $9/mo
+- Custom Enterprise: Contact Us
+
+**Feature comparison table** at bottom (expandable/collapsible)
+
+---
+
+#### 1.3 How It Works Page
+Detailed explanation with illustrations:
+
+1. **Create Your Profile**
+   - Sign up in 30 seconds
+   - Visual of signup form
+
+2. **Complete the Health Questionnaire**
+   - Show sample questionnaire preview
+   - Highlight: health conditions, goals, dietary restrictions, preferences
+
+3. **AI Analyzes Your Needs**
+   - Animation/illustration of AI processing
+   - Show factors considered: BMI, goals, restrictions, preferences
+
+4. **Receive Your Personalized Plan**
+   - Sample meal plan card preview
+   - Breakfast, lunch, dinner, snacks with times
+
+5. **Get Detailed Recipes**
+   - Sample recipe card with ingredients, steps, nutrition
+
+6. **Shop with Smart Grocery Lists**
+   - Sample grocery list organized by store section
+
+7. **Track Your Progress**
+   - Sample progress chart/dashboard preview
+
+8. **Adjust and Improve**
+   - Show how plans adapt over time
+
+---
+
+#### 1.4 Features Page
+Detailed feature showcase:
+
+**Dietary Customizations:**
+- Religious diets grid: Halal, Kosher, Jain Vegetarian, Hindu Vegetarian, Buddhist
+- Lifestyle diets grid: Vegan, Vegetarian, Keto, Paleo, Mediterranean, Low-carb
+- Medical diets grid: Diabetic-friendly, Heart-healthy, Low-sodium, GERD-friendly, Renal diet
+
+**Health Goals:**
+- Weight loss
+- Weight gain
+- Muscle building
+- Maintenance
+- Athletic performance
+- Post-surgery recovery
+
+**Smart Features:**
+- AI-powered personalization
+- Multi-language meal plans (show flags: EN, ES, FR, DE, HI, AR, etc.)
+- Currency localization
+- Seasonal ingredient suggestions
+- Leftover utilization
+- Budget-conscious options
+
+**Output Features:**
+- Detailed nutritional breakdown per meal
+- Calorie, protein, carbs, fat, fiber counts
+- Micronutrient information
+- Glycemic index indicators
+- Allergen warnings
+- Prep time and cooking time
+- Difficulty level
+
+---
+
+#### 1.5 For Professionals Page (B2B Landing)
+Dedicated page for nutritionists, doctors, gyms:
+
+**Hero:** "Scale Your Nutrition Practice with AI"
+**Subheadline:** "Create personalized meal plans for hundreds of clients in minutes, not hours"
+
+**Benefits Section:**
+- Save 10+ hours per week
+- White-label with your branding
+- Impress clients with professional PDFs
+- Track all client progress in one dashboard
+
+**Use Cases:**
+- Nutritionists & Dietitians
+- Medical Practices
+- Fitness Influencers
+- Gyms & Studios
+- Corporate Wellness Programs
+
+**Demo Request Form:**
+- Name, email, business type, number of clients
+- CTA: "Request Demo"
+
+**B2B Pricing Cards** (same as pricing page B2B section)
+
+**Testimonials** from professionals
+
+---
+
+#### 1.6 About Us Page
+- Our mission
+- The problem we solve
+- Our story
+- Team section (placeholder photos/names)
+- Our values (health, inclusivity, privacy, science-backed)
+
+---
+
+#### 1.7 Contact Page
+- Contact form (name, email, subject, message)
+- Email address
+- Support hours
+- FAQ link
+- Social media links
+
+---
+
+#### 1.8 Blog/Resources Page (List View)
+- Grid of blog post cards
+- Categories: Nutrition Tips, Recipes, Success Stories, Diet Guides
+- Search bar
+- Filter by category
+
+---
+
+#### 1.9 Blog Post Page (Single)
+- Article layout with featured image
+- Author info
+- Related posts
+- CTA to try meal plan
+
+---
+
+#### 1.10 Legal Pages
+- Privacy Policy (placeholder text)
+- Terms of Service (placeholder text)
+- Cookie Policy (placeholder text)
+
+---
+
+### 2. AUTHENTICATION PAGES
+
+#### 2.1 Sign Up Page
+- Form fields: Full name, Email, Password, Confirm password
+- Password strength indicator
+- Checkbox: "I agree to Terms and Privacy Policy"
+- CTA: "Create Free Account"
+- Divider: "or continue with"
+- Social login buttons: Google, Apple
+- Link: "Already have an account? Log in"
+- Side illustration: Happy person with healthy meal
+
+---
+
+#### 2.2 Login Page
+- Form fields: Email, Password
+- "Forgot password?" link
+- "Remember me" checkbox
+- CTA: "Log In"
+- Social login buttons
+- Link: "Don't have an account? Sign up free"
+
+---
+
+#### 2.3 Forgot Password Page
+- Email input
+- CTA: "Send Reset Link"
+- Back to login link
+
+---
+
+#### 2.4 Reset Password Page
+- New password input
+- Confirm password input
+- Password requirements list
+- CTA: "Reset Password"
+
+---
+
+### 3. ONBOARDING / QUESTIONNAIRE PAGES (B2C)
+
+This is a multi-step wizard/stepper form. Show progress bar at top.
+
+#### Step 1: Basic Information
+- Name (pre-filled if signed up)
+- Age
+- Gender (Male/Female/Other/Prefer not to say)
+- Height (toggle: cm or feet/inches)
+- Current weight (toggle: kg or lbs)
+- Target weight (optional)
+
+#### Step 2: Health Goals
+Radio/checkbox selection:
+- Lose weight
+- Gain weight
+- Build muscle
+- Maintain weight
+- Improve overall health
+- Manage specific condition
+- Athletic performance
+- Post-surgery recovery
+
+#### Step 3: Activity Level
+Radio selection with icons:
+- Sedentary (desk job, little exercise)
+- Lightly active (light exercise 1-3 days/week)
+- Moderately active (moderate exercise 3-5 days/week)
+- Very active (hard exercise 6-7 days/week)
+- Extremely active (athlete, physical job)
+
+#### Step 4: Dietary Preferences
+Checkbox grid:
+- No restrictions
+- Vegetarian
+- Vegan
+- Pescatarian
+- Keto
+- Paleo
+- Mediterranean
+- Low-carb
+- Low-fat
+- Gluten-free
+- Dairy-free
+
+#### Step 5: Religious/Cultural Diet
+Radio selection:
+- No religious dietary requirements
+- Halal
+- Kosher
+- Jain Vegetarian (no root vegetables)
+- Hindu Vegetarian
+- Buddhist Vegetarian
+- Sattvic diet
+- Other (text input)
+
+#### Step 6: Health Conditions
+Checkbox list:
+- None
+- Diabetes (Type 1 / Type 2)
+- Heart disease
+- High blood pressure
+- High cholesterol
+- Kidney disease
+- GERD / Acid reflux
+- IBS / Digestive issues
+- PCOS
+- Thyroid condition
+- Food allergies (specify)
+- Other (text input)
+
+#### Step 7: Allergies & Intolerances
+Searchable multi-select or checkbox grid:
+- No allergies
+- Nuts
+- Peanuts
+- Shellfish
+- Fish
+- Eggs
+- Milk/Dairy
+- Wheat/Gluten
+- Soy
+- Sesame
+- Other (text input for custom)
+
+#### Step 8: Food Preferences
+**Foods you love:** (multi-select chips)
+- Chicken, Fish, Eggs, Tofu, Lentils, Rice, Pasta, Salads, Soups, etc.
+
+**Foods you hate:** (multi-select chips)
+- Same options
+
+#### Step 9: Meal Preferences
+- Meals per day: 3 / 4 / 5 / 6 (radio)
+- Include snacks? Yes/No
+- Cooking time available: 
+  - Quick (<20 min)
+  - Moderate (20-40 min)
+  - I enjoy cooking (40+ min)
+- Budget level: Budget-friendly / Moderate / Premium ingredients OK
+
+#### Step 10: Plan Duration
+- Daily meal plan
+- Weekly meal plan (7 days)
+- Monthly meal plan (30 days)
+
+#### Step 11: Language Preference
+- Dropdown with flags: English, Spanish, French, German, Hindi, Arabic, Portuguese, Chinese, Japanese, etc.
+- "Generate meal plan in this language"
+
+#### Final: Review & Generate
+- Summary of all selections in a nice card layout
+- Edit buttons for each section
+- Big CTA: "Generate My Personalized Meal Plan"
+- Loading state with fun food-related messages:
+  - "Analyzing your nutritional needs..."
+  - "Crafting the perfect recipes..."
+  - "Balancing your macros..."
+  - "Almost ready to eat well!"
+
+---
+
+### 4. B2C DASHBOARD PAGES (Post-Login)
+
+#### 4.1 Dashboard Home
+**Top Bar:**
+- Logo (left)
+- Search bar (center)
+- Language/Currency selector
+- Notifications bell
+- Profile dropdown (right)
+
+**Sidebar Navigation:**
+- Dashboard (home icon)
+- My Meal Plans
+- Generate New Plan
+- Grocery Lists
+- Progress Tracking
+- Recipes Library
+- AI Chat Support
+- Settings
+- Upgrade Plan (if on free)
+- Help & Support
+
+**Main Content:**
+
+**Welcome Banner:**
+- "Good morning, [Name]! Ready for a healthy day?"
+- Today's calorie goal: 2,100 kcal
+- Quick stats cards: Current weight, Target weight, Days on plan
+
+**Today's Meals Card:**
+- Visual timeline of today's meals
+- Breakfast (7:00 AM): Oatmeal with berries - 350 kcal
+- Snack (10:00 AM): Greek yogurt - 150 kcal
+- Lunch (1:00 PM): Grilled chicken salad - 450 kcal
+- Snack (4:00 PM): Apple with almond butter - 200 kcal
+- Dinner (7:00 PM): Salmon with quinoa - 550 kcal
+- Each meal clickable to see recipe
+
+**Weekly Overview:**
+- Mini calendar showing meal plan status for the week
+- Completed days (checkmark), today (highlighted), upcoming
+
+**Quick Actions:**
+- "Generate Tomorrow's Plan"
+- "View Grocery List"
+- "Log Today's Weight"
+
+**Nutrition Summary Widget:**
+- Circular progress charts: Calories, Protein, Carbs, Fat
+- Daily goals vs consumed
+
+---
+
+#### 4.2 My Meal Plans Page
+**Tabs:** Daily Plans | Weekly Plans | Monthly Plans
+
+**Plan Cards Grid:**
+Each card shows:
+- Plan name/date: "Week of Dec 2-8, 2024"
+- Status badge: Active / Completed / Saved
+- Calories range: 1,800 - 2,100/day
+- Diet tags: Halal, High-protein
+- Preview of meals (small images)
+- Actions: View, Download PDF, Regenerate, Delete
+
+**Filters:**
+- Date range picker
+- Diet type
+- Status
+
+**Pagination or infinite scroll**
+
+---
+
+#### 4.3 Meal Plan Detail Page
+**Header:**
+- Plan title: "Your Weekly Meal Plan: Dec 2-8"
+- Diet type badges
+- Download PDF button
+- Regenerate button
+- Share button
+
+**Day Tabs:** Mon | Tue | Wed | Thu | Fri | Sat | Sun
+
+**For each day:**
+- Total daily nutrition bar: 2,050 kcal | 120g protein | 200g carbs | 70g fat
+
+**Meal Cards:**
+Each meal (Breakfast, Snack 1, Lunch, Snack 2, Dinner):
+- Meal image
+- Meal name
+- Time suggestion
+- Calories
+- Quick macros
+- "View Recipe" button
+- "Swap Meal" button (generates alternative)
+- Checkbox: "Mark as eaten"
+
+---
+
+#### 4.4 Recipe Detail Page
+**Header:**
+- Recipe image (large, appetizing)
+- Recipe name: "Mediterranean Grilled Chicken with Quinoa Salad"
+- Tags: High-protein, Mediterranean, Gluten-free
+- Prep time: 15 min | Cook time: 25 min | Servings: 2
+- Difficulty: Easy/Medium/Hard
+
+**Nutrition Facts Box:**
+- Calories: 480
+- Protein: 42g
+- Carbs: 35g
+- Fat: 18g
+- Fiber: 6g
+- Sodium: 420mg
+- (Expandable for micronutrients)
+
+**Ingredients List:**
+- Checkbox style for crossing off
+- Quantity, unit, ingredient name
+- "Add to Grocery List" button
+
+**Instructions:**
+- Numbered steps
+- Clear formatting
+- Tips highlighted
+
+**Actions:**
+- Save to favorites
+- Print recipe
+- Share recipe
+- Rate recipe (stars)
+
+---
+
+#### 4.5 Generate New Plan Page
+- Streamlined version of onboarding questionnaire
+- Pre-filled with saved preferences
+- Options to tweak for this specific plan
+- Plan type selector: Daily / Weekly / Monthly
+- Special notes text area: "Any special requests for this plan?"
+- Generate button
+
+---
+
+#### 4.6 Grocery List Page
+**Current Plan Grocery List:**
+- Organized by store section:
+  - 🥬 Produce
+  - 🥩 Meat & Seafood
+  - 🥛 Dairy & Eggs
+  - 🍞 Bakery & Bread
+  - 🥫 Pantry Staples
+  - ❄️ Frozen
+  - 🌿 Spices & Seasonings
+
+- Each item: checkbox, quantity, item name
+- "Add custom item" input
+- "Clear checked items" button
+- "Export list" (PDF, print, share)
+
+**Estimated Cost Widget:**
+- Approximate cost: $85 - $110
+- Based on average prices
+
+---
+
+#### 4.7 Progress Tracking Page
+**Weight Tracker:**
+- Line chart showing weight over time
+- Goal line indicator
+- "Log Today's Weight" button with input
+
+**Stats Cards:**
+- Starting weight → Current weight → Goal weight
+- Total lost/gained
+- BMI calculator with current BMI
+
+**Nutrition Compliance:**
+- Calendar heatmap showing adherence
+- Percentage of meals followed this week/month
+
+**Measurements Section (optional):**
+- Waist, hips, chest measurements over time
+- Add measurement form
+
+**Milestones:**
+- Badges/achievements earned
+- "First week completed!", "5 lbs lost!", etc.
+
+---
+
+#### 4.8 AI Chat Support Page
+**Chat Interface:**
+- Chat window design
+- AI avatar/icon
+- Message bubbles (user right, AI left)
+- Sample conversation:
+  - User: "Can I substitute chicken in tomorrow's lunch?"
+  - AI: "Of course! Here are some options based on your preferences: 1) Grilled tofu, 2) Baked salmon, 3) Lentil patty. Would you like me to update your meal plan?"
+- Input field with send button
+- "Suggested questions" chips above input:
+  - "What can I eat for a midnight snack?"
+  - "I'm feeling low energy, any suggestions?"
+  - "Swap dinner for something quicker"
+
+---
+
+#### 4.9 Recipes Library Page
+**Search & Filters:**
+- Search bar
+- Filter by: Meal type (Breakfast, Lunch, etc.), Diet, Cuisine, Cook time, Calories
+- Sort by: Newest, Popular, Quickest, Highest rated
+
+**Recipe Grid:**
+- Card for each recipe:
+  - Image
+  - Name
+  - Rating (stars)
+  - Time, Calories
+  - Diet tags
+  - Save/favorite button
+
+---
+
+#### 4.10 Settings Page
+**Sections:**
+
+**Profile Settings:**
+- Profile photo upload
+- Name, email
+- Change password
+
+**Dietary Preferences:**
+- Edit questionnaire responses
+- Update allergies, restrictions
+
+**Notification Settings:**
+- Email notifications toggles
+- Meal reminders
+- Weekly summary email
+
+**App Preferences:**
+- Language selector (with flags)
+- Currency selector
+- Unit system: Metric / Imperial
+- Theme: Light / Dark (optional)
+
+**Subscription & Billing:**
+- Current plan display
+- "Upgrade" or "Manage Subscription" button
+- Billing history table
+- Payment method (card ending in ****1234)
+- Cancel subscription link
+
+**Connected Apps:**
+- Apple Health
+- Google Fit
+- MyFitnessPal
+- Fitbit
+- (Show as toggles, mock only)
+
+**Data & Privacy:**
+- Download my data
+- Delete account
+
+---
+
+#### 4.11 Family Dashboard (Family Plan Only)
+**Family Members Section:**
+- Cards for each member (up to 5)
+- Photo, name, diet type, current goal
+- "View their plan" button
+- "Add family member" button
+
+**Family Overview:**
+- Combined grocery list option
+- Shared meals indicator (when all eating same meal)
+- Individual progress mini-charts
+
+**Family Settings:**
+- Manage members
+- Shared vs individual grocery lists
+- Family meal coordination preferences
+
+---
+
+#### 4.12 Upgrade Page (for Free Users)
+- Comparison of Free vs Paid
+- Benefits highlight
+- Pricing cards
+- FAQ about upgrading
+- CTA: "Start 7-Day Free Trial"
+
+---
+
+### 5. B2B DASHBOARD PAGES
+
+#### 5.1 B2B Dashboard Home
+**Top Bar:** Same structure, B2B branding (blue tones)
+
+**Sidebar:**
+- Dashboard
+- My Clients
+- Create Meal Plan
+- Bulk Generate
+- Client Progress
+- Branding Settings
+- Team Members
+- Analytics
+- Billing & Subscription
+- Settings
+- Help Center
+
+**Main Content:**
+
+**Stats Cards:**
+- Total Clients: 247
+- Plans Generated This Month: 892 / 1,500
+- Active Plans: 189
+- Client Satisfaction: 4.8/5
+
+**Quick Actions:**
+- "Add New Client"
+- "Generate Bulk Plans"
+- "View All Clients"
+
+**Recent Activity Feed:**
+- "New client Sarah M. added"
+- "Weekly plan generated for John D."
+- "Client Emma R. completed week 3"
+
+**Alerts:**
+- "You're at 60% of monthly plan limit"
+- "3 clients due for plan renewal"
+
+---
+
+#### 5.2 Clients List Page
+**Search & Filters:**
+- Search by name, email
+- Filter by: Status (active, inactive), Diet type, Health goal
+- Sort by: Name, Date added, Last plan date
+
+**Clients Table:**
+- Columns: Photo, Name, Email, Diet Type, Last Plan, Status, Actions
+- Actions: View, Create Plan, Edit, Archive
+
+**Pagination**
+
+**"Add New Client" button** (opens modal/page)
+
+---
+
+#### 5.3 Client Detail Page
+**Client Header:**
+- Photo, name, email, phone
+- Status badge
+- "Edit Client" button
+- "Create Plan" button
+
+**Client Info Card:**
+- Age, gender, height, weight, target weight
+- Health conditions
+- Allergies
+- Dietary restrictions
+- Goals
+- Notes
+
+**Client's Meal Plans Tab:**
+- List of all plans created for this client
+- Status, dates, actions
+
+**Progress Tab:**
+- Weight chart
+- Compliance stats
+- Notes timeline
+
+**Communication Tab:**
+- Sent meal plans log
+- Notes/comments
+
+---
+
+#### 5.4 Create Plan for Client Page
+- Client info summary at top
+- Questionnaire (similar to B2C but with client data pre-filled)
+- Ability to override/customize
+- Plan duration selector
+- Special notes for this client
+- "Generate Plan" button
+- Preview before sending
+
+---
+
+#### 5.5 Bulk Generate Page
+**Select Clients:**
+- Checkbox list of clients
+- "Select All" option
+- Filter to narrow down
+
+**Bulk Settings:**
+- Plan duration for all
+- Regenerate existing or skip
+- Schedule delivery
+
+**Generate & Review:**
+- Progress indicator
+- Review generated plans
+- "Send All" or send individually
+
+---
+
+#### 5.6 Branding Settings Page
+**Logo Upload:**
+- Current logo preview
+- Upload new logo (PNG, SVG)
+- Logo placement preview on PDF
+
+**Business Info:**
+- Business name
+- Tagline (appears on PDFs)
+- Contact email
+- Phone number
+- Website URL
+
+**Signature:**
+- Digital signature upload
+- Credentials/titles to display
+
+**PDF Customization:**
+- Preview of branded PDF
+- Color accent selector (to match their brand)
+- Footer text customization
+
+**Email Template:**
+- Customize email that goes with meal plans
+- Preview
+
+---
+
+#### 5.7 Team Members Page (Pro & Enterprise)
+**Team List:**
+- Table: Name, Email, Role, Last Active, Actions
+- Roles: Admin, Nutritionist, Assistant (view only)
+
+**Invite Team Member:**
+- Email input
+- Role selector
+- Send invite button
+
+**Permissions Matrix:**
+- What each role can do
+
+---
+
+#### 5.8 Analytics Dashboard
+**Date Range Picker**
+
+**Charts & Stats:**
+- Plans generated over time (line chart)
+- Clients added over time
+- Most common diet types (pie chart)
+- Client goal distribution
+- Engagement metrics
+- Client retention rate
+
+**Export Reports Button**
+
+---
+
+#### 5.9 B2B Settings Page
+Similar to B2C settings plus:
+- Business profile
+- Team management
+- White-label settings link
+- API settings (coming soon - disabled)
+
+---
+
+#### 5.10 B2B Billing Page
+- Current plan with usage
+- Progress bar: 892 / 1,500 plans used
+- Clients: 247 / 500
+- Upgrade options
+- Add-ons available
+- Billing history
+- Invoice download
+- Payment method management
+
+---
+
+### 6. SHARED COMPONENTS
+
+#### 6.1 Header/Navbar
+- Logo (links to home)
+- Main navigation links
+- CTA button (Login / Dashboard)
+- Mobile hamburger menu
+
+#### 6.2 Footer
+- Logo and tagline
+- Navigation columns: Product, Company, Resources, Legal
+- Social links
+- Language/Currency selector
+- Copyright
+
+#### 6.3 Modals
+- Confirmation dialogs
+- Success messages
+- Error messages
+- Loading states
+
+#### 6.4 Empty States
+- No meal plans yet
+- No clients yet
+- No search results
+
+#### 6.5 Loading States
+- Skeleton loaders
+- Spinner animations
+- Progress bars for plan generation
+
+#### 6.6 Toast Notifications
+- Success (green)
+- Error (red)
+- Warning (yellow)
+- Info (blue)
+
+#### 6.7 Mobile Responsive
+- All pages must be fully responsive
+- Mobile-first approach
+- Touch-friendly buttons
+- Collapsible sidebar on mobile
+
+---
+
+### 7. SAMPLE MEAL PLAN DATA
+
+Use this mock data for displaying meal plans:
+
+```json
+{
+  "planName": "High-Protein Weight Loss Plan",
+  "date": "December 6, 2024",
+  "dietType": ["Halal", "High-Protein", "Low-Carb"],
+  "dailyCalories": 1800,
+  "meals": [
+    {
+      "type": "Breakfast",
+      "time": "7:00 AM",
+      "name": "Spinach & Feta Egg White Omelette",
+      "calories": 320,
+      "protein": 28,
+      "carbs": 8,
+      "fat": 18,
+      "prepTime": "15 min",
+      "ingredients": [
+        "4 egg whites",
+        "1 cup fresh spinach",
+        "30g feta cheese",
+        "1 tbsp olive oil",
+        "Salt and pepper to taste"
+      ]
+    },
+    {
+      "type": "Morning Snack",
+      "time": "10:00 AM",
+      "name": "Greek Yogurt with Almonds",
+      "calories": 180,
+      "protein": 15,
+      "carbs": 12,
+      "fat": 8
+    },
+    {
+      "type": "Lunch",
+      "time": "1:00 PM",
+      "name": "Grilled Chicken Quinoa Bowl",
+      "calories": 520,
+      "protein": 45,
+      "carbs": 42,
+      "fat": 16
+    },
+    {
+      "type": "Afternoon Snack",
+      "time": "4:00 PM",
+      "name": "Hummus with Cucumber Sticks",
+      "calories": 150,
+      "protein": 6,
+      "carbs": 15,
+      "fat": 8
+    },
+    {
+      "type": "Dinner",
+      "time": "7:30 PM",
+      "name": "Herb-Crusted Salmon with Roasted Vegetables",
+      "calories": 580,
+      "protein": 42,
+      "carbs": 25,
+      "fat": 32
+    }
+  ],
+  "totalNutrition": {
+    "calories": 1750,
+    "protein": 136,
+    "carbs": 102,
+    "fat": 82,
+    "fiber": 28
+  }
+}
+```
+
+---
+
+### 8. IMPORTANT DESIGN NOTES
+
+1. **No Backend Required:** All forms should show static success states. No actual data processing.
+
+2. **Use Placeholder Images:** Use Unsplash or placeholder services for food images. Suggest searches: "healthy meal", "salad bowl", "grilled chicken", "breakfast oatmeal"
+
+3. **Consistent Spacing:** Use 8px grid system. Spacing: 8, 16, 24, 32, 48, 64px
+
+4. **Accessibility:** Proper contrast ratios, focus states, alt text for images
+
+5. **Animations:** Subtle hover effects, page transitions, loading states. Don't overdo it.
+
+6. **Mobile First:** Design for mobile, then scale up to desktop
+
+7. **Error States:** Design empty states, error messages, 404 page
+
+8. **Dark Mode (Optional):** If time permits, add dark mode toggle
+
+---
+
+### 9. FILE STRUCTURE SUGGESTION
+
+```
+src/
+├── components/
+│   ├── common/
+│   │   ├── Header.jsx
+│   │   ├── Footer.jsx
+│   │   ├── Button.jsx
+│   │   ├── Card.jsx
+│   │   ├── Modal.jsx
+│   │   └── ...
+│   ├── landing/
+│   ├── dashboard/
+│   ├── b2b/
+│   └── questionnaire/
+├── pages/
+│   ├── public/
+│   │   ├── Home.jsx
+│   │   ├── Pricing.jsx
+│   │   ├── HowItWorks.jsx
+│   │   ├── Features.jsx
+│   │   ├── ForProfessionals.jsx
+│   │   ├── About.jsx
+│   │   ├── Contact.jsx
+│   │   └── Blog.jsx
+│   ├── auth/
+│   │   ├── Login.jsx
+│   │   ├── Signup.jsx
+│   │   └── ForgotPassword.jsx
+│   ├── onboarding/
+│   │   └── Questionnaire.jsx
+│   ├── dashboard/
+│   │   ├── Home.jsx
+│   │   ├── MealPlans.jsx
+│   │   ├── MealPlanDetail.jsx
+│   │   ├── Recipe.jsx
+│   │   ├── GroceryList.jsx
+│   │   ├── Progress.jsx
+│   │   ├── Chat.jsx
+│   │   ├── Settings.jsx
+│   │   └── Family.jsx
+│   └── b2b/
+│       ├── Dashboard.jsx
+│       ├── Clients.jsx
+│       ├── ClientDetail.jsx
+│       ├── BulkGenerate.jsx
+│       ├── Branding.jsx
+│       ├── Team.jsx
+│       ├── Analytics.jsx
+│       └── Billing.jsx
+├── data/
+│   └── mockData.js
+├── styles/
+│   └── globals.css
+└── App.jsx
+```
+
+---
+
+## Summary
+
+This is a complete frontend design for **TailoredMealPlan.com** covering:
+- 10+ public pages
+- 4 authentication pages
+- 11-step onboarding questionnaire
+- 12+ B2C dashboard pages
+- 10+ B2B dashboard pages
+- Shared components and design system
+
+Focus on creating a **polished, professional, health-focused design** that feels trustworthy and appetizing. The interface should make users excited about healthy eating!
+
+**Priority Order for Design:**
+1. Landing page
+2. Pricing page
+3. Signup/Login
+4. Questionnaire flow
+5. B2C Dashboard + Meal Plan Detail
+6. B2B Dashboard + Client Management
+7. Remaining pages
+
+Good luck! 🥗
