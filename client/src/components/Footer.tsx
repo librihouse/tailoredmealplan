@@ -46,10 +46,6 @@ export function Footer() {
         
         <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center text-xs font-bold text-gray-600 uppercase tracking-widest">
           <p>&copy; {new Date().getFullYear()} TAILOREDMEALPLAN. ALL RIGHTS RESERVED.</p>
-          <div className="flex gap-4 mt-4 md:mt-0">
-             <span>ENGLISH</span>
-             <span>ESPAÑOL</span>
-          </div>
         </div>
       </div>
     </footer>
