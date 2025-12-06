@@ -25,7 +25,7 @@
   --color-ring: hsl(var(--ring));
   
   --font-sans: 'Montserrat', sans-serif;
-  --font-heading: 'Oswald', sans-serif;
+  --font-heading: 'Oswald', sans-serif; /* Strong, gym-like */
   
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -33,17 +33,20 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* LIGHT MODE - High-End Wellness Center (Bright & Airy) */
+/* LIGHT MODE - Modern Wellness / Gym Theme */
 :root {
-  /* Primary: Electric Lime (Darker for readability on light bg) */
-  --primary: 84 80% 40%; 
+  /* Vibrant, High Energy Palette */
+  
+  /* Primary: Electric Lime / Wellness Green */
+  /* HSL 84, 100%, 59% (#BFFF00 sort of vibe but usable) */
+  --primary: 84 80% 45%; 
   --primary-foreground: 0 0% 100%;
   
-  /* Backgrounds: Clean White */
+  /* Backgrounds: Clean White + Light Greys */
   --background: 0 0% 100%;
   --foreground: 0 0% 10%; /* Nearly Black */
 
-  /* Muted: Very Light Grey */
+  /* Muted: Light Cool Grey */
   --muted: 210 20% 96%;
   --muted-foreground: 215 10% 45%;
 
@@ -53,9 +56,11 @@
   --popover: 0 0% 100%;
   --popover-foreground: 0 0% 10%;
 
-  --secondary: 210 20% 96%;
-  --secondary-foreground: 0 0% 10%;
+  /* Secondary: Deep Charcoal / Black (for contrast) */
+  --secondary: 0 0% 10%;
+  --secondary-foreground: 0 0% 100%;
 
+  /* Accent: Energetic Coral/Orange */
   --accent: 16 90% 60%;
   --accent-foreground: 0 0% 100%;
 
@@ -64,14 +69,14 @@
 
   --border: 214 20% 90%;
   --input: 214 20% 90%;
-  --ring: 84 80% 40%;
+  --ring: 84 80% 45%;
 
-  --radius: 0.5rem;
+  --radius: 0.75rem; /* Larger, softer corners */
 }
 
 .dark {
-  /* Kept just in case, but user wants light */
-  --background: 240 10% 4%;
+  /* Dark Mode: "Night Gym" Vibe */
+  --background: 240 10% 4%; /* Almost black */
   --foreground: 0 0% 98%;
   
   --card: 240 10% 8%;
@@ -80,7 +85,7 @@
   --popover: 240 10% 8%;
   --popover-foreground: 0 0% 98%;
   
-  --primary: 84 80% 55%;
+  --primary: 84 80% 55%; /* Brighter Lime */
   --primary-foreground: 0 0% 0%;
   
   --secondary: 0 0% 98%;
