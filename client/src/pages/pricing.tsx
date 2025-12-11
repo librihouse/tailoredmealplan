@@ -5,6 +5,7 @@ import { Check, X, HelpCircle } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
+import { motion } from "framer-motion";
 
 export default function Pricing() {
   const [isAnnual, setIsAnnual] = useState(false);
@@ -125,23 +126,36 @@ export default function Pricing() {
 
   const plans = view === "b2c" ? b2cPlans : b2bPlans;
 
+  const fadeInUp = {
+    hidden: { opacity: 0, y: 60 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
+  } as const;
+
   return (
     <Layout>
-      <div className="bg-bg-cream py-20">
+      <div className="bg-black text-white py-24 md:py-32">
         <div className="container max-w-screen-xl px-4 md:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-12">
-            <h1 className="font-serif text-4xl md:text-5xl font-bold text-text-dark mb-6">Simple, Transparent Pricing</h1>
-            <p className="text-xl text-muted-foreground mb-8">
+          <motion.div 
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={fadeInUp}
+            className="text-center max-w-3xl mx-auto mb-12"
+          >
+            <h1 className="font-heading text-5xl md:text-7xl font-bold uppercase mb-6 text-white">
+              Simple, <span className="text-primary">Transparent</span> Pricing
+            </h1>
+            <p className="text-xl text-gray-400 mb-8">
               Choose the plan that fits your needs. Cancel anytime.
             </p>
 
             {/* View Toggle */}
-            <div className="inline-flex bg-muted p-1 rounded-lg mb-8">
+            <div className="inline-flex bg-gray-900/50 border border-white/10 p-1 rounded-lg mb-8">
               <button 
                 onClick={() => setView("b2c")}
                 className={cn(
                   "px-6 py-2 rounded-md text-sm font-medium transition-all",
-                  view === "b2c" ? "bg-white shadow-sm text-primary" : "text-muted-foreground hover:text-primary"
+                  view === "b2c" ? "bg-primary text-black shadow-lg" : "text-gray-400 hover:text-white"
                 )}
               >
                 For Individuals & Families
@@ -150,7 +164,7 @@ export default function Pricing() {
                 onClick={() => setView("b2b")}
                 className={cn(
                   "px-6 py-2 rounded-md text-sm font-medium transition-all",
-                  view === "b2b" ? "bg-white shadow-sm text-primary" : "text-muted-foreground hover:text-primary"
+                  view === "b2b" ? "bg-primary text-black shadow-lg" : "text-gray-400 hover:text-white"
                 )}
               >
                 For Professionals
@@ -159,12 +173,12 @@ export default function Pricing() {
 
             {/* Annual Toggle */}
             <div className="flex items-center justify-center gap-4">
-              <span className={cn("text-sm font-medium", !isAnnual ? "text-text-dark" : "text-muted-foreground")}>Monthly</span>
+              <span className={cn("text-sm font-medium", !isAnnual ? "text-white" : "text-gray-400")}>Monthly</span>
               <button 
                 onClick={() => setIsAnnual(!isAnnual)}
                 className={cn(
-                  "relative w-12 h-6 rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2",
-                  isAnnual ? "bg-primary" : "bg-gray-300"
+                  "relative w-12 h-6 rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-black",
+                  isAnnual ? "bg-primary" : "bg-gray-700"
                 )}
               >
                 <span 
@@ -174,78 +188,93 @@ export default function Pricing() {
                   )} 
                 />
               </button>
-              <span className={cn("text-sm font-medium flex items-center gap-2", isAnnual ? "text-text-dark" : "text-muted-foreground")}>
-                Annual <span className="text-xs text-accent font-bold bg-accent/10 px-2 py-0.5 rounded-full">Save ~20%</span>
+              <span className={cn("text-sm font-medium flex items-center gap-2", isAnnual ? "text-white" : "text-gray-400")}>
+                Annual <span className="text-xs text-primary font-bold bg-primary/20 px-2 py-0.5 rounded-full border border-primary/30">Save ~20%</span>
               </span>
             </div>
-          </div>
+          </motion.div>
 
           <div className="grid md:grid-cols-3 gap-8">
             {plans.map((plan, index) => (
-              <Card key={index} className={cn(
-                "relative flex flex-col border-2 transition-all duration-300 hover:shadow-xl",
-                plan.popular ? "border-primary shadow-lg scale-105 z-10" : "border-transparent shadow-md hover:border-primary/20"
-              )}>
-                {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-md">
-                    Most Popular
-                  </div>
-                )}
-                
-                <CardHeader>
-                  <CardTitle className="font-serif text-2xl">{plan.name}</CardTitle>
-                  <CardDescription>{plan.description}</CardDescription>
-                </CardHeader>
-                
-                <CardContent className="flex-1">
-                  <div className="mb-6">
-                    <span className="text-4xl font-bold font-mono text-text-dark">{plan.price}</span>
-                    <span className="text-muted-foreground ml-2">{plan.period}</span>
-                  </div>
+              <motion.div
+                key={index}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                variants={fadeInUp}
+                transition={{ delay: index * 0.1 }}
+              >
+                <Card className={cn(
+                  "relative flex flex-col border-2 transition-all duration-300 hover:shadow-xl bg-gray-900/50 backdrop-blur",
+                  plan.popular ? "border-primary shadow-lg shadow-primary/20 scale-105 z-10" : "border-white/10 shadow-md hover:border-primary/30"
+                )}>
+                  {plan.popular && (
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-black px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-lg">
+                      Most Popular
+                    </div>
+                  )}
+                  
+                  <CardHeader>
+                    <CardTitle className="font-heading text-2xl text-white">{plan.name}</CardTitle>
+                    <CardDescription className="text-gray-400">{plan.description}</CardDescription>
+                  </CardHeader>
+                  
+                  <CardContent className="flex-1">
+                    <div className="mb-6">
+                      <span className="text-4xl font-bold font-mono text-white">{plan.price}</span>
+                      <span className="text-gray-400 ml-2">{plan.period}</span>
+                    </div>
 
-                  <ul className="space-y-3 text-sm">
-                    {plan.features.map((feature, i) => (
-                      <li key={i} className="flex items-start gap-3">
-                        <Check className="h-5 w-5 text-primary shrink-0" />
-                        <span className="text-text-dark">{feature}</span>
-                      </li>
-                    ))}
-                    {plan.limitations.map((limitation, i) => (
-                      <li key={i} className="flex items-start gap-3 opacity-50">
-                        <X className="h-5 w-5 text-muted-foreground shrink-0" />
-                        <span className="text-muted-foreground">{limitation}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
+                    <ul className="space-y-3 text-sm">
+                      {plan.features.map((feature, i) => (
+                        <li key={i} className="flex items-start gap-3">
+                          <Check className="h-5 w-5 text-primary shrink-0" />
+                          <span className="text-gray-300">{feature}</span>
+                        </li>
+                      ))}
+                      {plan.limitations.map((limitation, i) => (
+                        <li key={i} className="flex items-start gap-3 opacity-50">
+                          <X className="h-5 w-5 text-gray-500 shrink-0" />
+                          <span className="text-gray-500">{limitation}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
 
-                <CardFooter>
-                  <Link href={view === "b2c" ? "/onboarding" : "/contact"} className="w-full">
-                    <Button className={cn(
-                      "w-full h-12 font-medium text-lg",
-                      plan.popular ? "bg-primary hover:bg-primary-light text-white" : "bg-white border-2 border-primary text-primary hover:bg-primary/5"
-                    )}>
-                      {plan.cta}
-                    </Button>
-                  </Link>
-                </CardFooter>
-              </Card>
+                  <CardFooter>
+                    <Link href={view === "b2c" ? "/onboarding" : "/contact"} className="w-full">
+                      <Button className={cn(
+                        "w-full h-12 font-medium text-lg font-bold uppercase tracking-wide rounded-none",
+                        plan.popular ? "bg-primary hover:bg-primary/90 text-black" : "bg-transparent border-2 border-primary text-primary hover:bg-primary hover:text-black"
+                      )}>
+                        {plan.cta}
+                      </Button>
+                    </Link>
+                  </CardFooter>
+                </Card>
+              </motion.div>
             ))}
           </div>
 
-          <div className="mt-16 text-center">
-             <h3 className="font-serif text-2xl font-bold mb-4">Frequently Asked Questions</h3>
+          <motion.div 
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={fadeInUp}
+            className="mt-16 text-center"
+          >
+             <h3 className="font-heading text-3xl font-bold mb-8 text-white uppercase">Frequently Asked Questions</h3>
              <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto text-left">
-               <div className="bg-white p-6 rounded-lg shadow-sm">
-                 <h4 className="font-bold mb-2 flex items-center gap-2"><HelpCircle className="h-4 w-4 text-primary"/> Can I cancel anytime?</h4>
-                 <p className="text-muted-foreground text-sm">Yes, you can cancel your subscription at any time. You'll keep access until the end of your billing period.</p>
+               <div className="bg-gray-900/50 border border-white/10 p-6 rounded-lg backdrop-blur">
+                 <h4 className="font-bold mb-2 flex items-center gap-2 text-white"><HelpCircle className="h-4 w-4 text-primary"/> Can I cancel anytime?</h4>
+                 <p className="text-gray-400 text-sm">Yes, you can cancel your subscription at any time. You'll keep access until the end of your billing period.</p>
                </div>
-               <div className="bg-white p-6 rounded-lg shadow-sm">
-                 <h4 className="font-bold mb-2 flex items-center gap-2"><HelpCircle className="h-4 w-4 text-primary"/> Do you offer refunds?</h4>
-                 <p className="text-muted-foreground text-sm">We offer a 7-day money-back guarantee for all paid plans if you're not satisfied.</p>
+               <div className="bg-gray-900/50 border border-white/10 p-6 rounded-lg backdrop-blur">
+                 <h4 className="font-bold mb-2 flex items-center gap-2 text-white"><HelpCircle className="h-4 w-4 text-primary"/> Do you offer refunds?</h4>
+                 <p className="text-gray-400 text-sm">We offer a 7-day money-back guarantee for all paid plans if you're not satisfied.</p>
                </div>
              </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </Layout>

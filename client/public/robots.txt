@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+# Disallow admin and API routes
+Disallow: /api/
+Disallow: /auth/
+Disallow: /onboarding/
+
+# Sitemap
+Sitemap: https://tailoredmealplan.com/sitemap.xml
+
