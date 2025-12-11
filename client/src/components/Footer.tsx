@@ -3,7 +3,7 @@ import { Link } from "wouter";
 export function Footer() {
   return (
     <footer className="bg-black text-white py-20 border-t border-white/10">
-      <div className="container max-w-screen-2xl px-4 md:px-8">
+      <div className="container max-w-screen-2xl mx-auto px-4 md:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
           <div className="md:col-span-1">
             <Link href="/">

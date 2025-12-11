@@ -115,4 +115,9 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading uppercase tracking-wide font-bold;
   }
+  
+  /* Center all containers automatically */
+  .container {
+    @apply mx-auto;
+  }
 }
