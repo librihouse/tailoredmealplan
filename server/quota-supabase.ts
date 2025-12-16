@@ -3,7 +3,7 @@
  * Handles quota validation for meal plan generation using Supabase
  */
 
-import { supabase } from "./supabase";
+import { supabaseAdmin } from "./supabase";
 import { getPlan, type PlanId } from "@shared/plans";
 
 export type PlanType = "daily" | "weekly" | "monthly";
@@ -50,10 +50,10 @@ interface Subscription {
 export async function getCurrentUsage(
   userId: string
 ): Promise<PlanUsage | null> {
-  if (!supabase) return null;
+  if (!supabaseAdmin) return null;
 
   // Get active subscription
-  const { data: subscriptions, error: subError } = await supabase
+  const { data: subscriptions, error: subError } = await supabaseAdmin
     .from("subscriptions")
     .select("*")
     .eq("user_id", userId)
@@ -68,7 +68,7 @@ export async function getCurrentUsage(
   const now = new Date().toISOString();
 
   // Find usage record for current billing period
-  const { data: usage, error: usageError } = await supabase
+  const { data: usage, error: usageError } = await supabaseAdmin
     .from("plan_usage")
     .select("*")
     .eq("user_id", userId)
@@ -88,7 +88,7 @@ export async function getCurrentUsage(
 
   // Create new usage record for this billing period
   if (sub.current_period_start && sub.current_period_end) {
-    const { data: newUsage, error: createError } = await supabase
+    const { data: newUsage, error: createError } = await supabaseAdmin
       .from("plan_usage")
       .insert({
         user_id: userId,
@@ -119,13 +119,13 @@ export async function checkQuota(
   userId: string,
   planType: PlanType
 ): Promise<{ allowed: boolean; error?: QuotaExceededError }> {
-  if (!supabase) {
+  if (!supabaseAdmin) {
     // In development without Supabase, allow everything
     return { allowed: true };
   }
 
   // Get active subscription
-  const { data: subscriptions, error: subError } = await supabase
+  const { data: subscriptions, error: subError } = await supabaseAdmin
     .from("subscriptions")
     .select("*")
     .eq("user_id", userId)
@@ -191,7 +191,7 @@ export async function incrementUsage(
   userId: string,
   planType: PlanType
 ): Promise<void> {
-  if (!supabase) return;
+  if (!supabaseAdmin) return;
 
   const usage = await getCurrentUsage(userId);
   if (!usage) return;
@@ -206,7 +206,7 @@ export async function incrementUsage(
     updateData.weekly_plans_used = usage.weekly_plans_used + 1;
   }
 
-  const { error } = await supabase
+  const { error } = await supabaseAdmin
     .from("plan_usage")
     .update(updateData)
     .eq("id", usage.id);
@@ -225,10 +225,10 @@ export async function getQuotaInfo(userId: string): Promise<{
   clients: { used: number; limit: number };
   resetDate: Date;
 } | null> {
-  if (!supabase) return null;
+  if (!supabaseAdmin) return null;
 
   // Get active subscription
-  const { data: subscriptions, error: subError } = await supabase
+  const { data: subscriptions, error: subError } = await supabaseAdmin
     .from("subscriptions")
     .select("*")
     .eq("user_id", userId)

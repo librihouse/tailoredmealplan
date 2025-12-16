@@ -145,7 +145,9 @@ export class MemStorage implements IStorage {
     const id = randomUUID();
     const now = new Date();
     const user: User = { 
-      ...insertUser, 
+      ...insertUser,
+      firstName: insertUser.firstName ?? null,
+      lastName: insertUser.lastName ?? null,
       id,
       createdAt: now,
       updatedAt: now,
@@ -166,6 +168,10 @@ export class MemStorage implements IStorage {
     const now = new Date();
     const sub: Subscription = {
       ...subscription,
+      status: subscription.status ?? "active",
+      billingInterval: subscription.billingInterval ?? "monthly",
+      cancelAtPeriodEnd: subscription.cancelAtPeriodEnd ?? null,
+      stripeSubscriptionId: subscription.stripeSubscriptionId ?? null,
       id,
       createdAt: now,
       updatedAt: now,
@@ -194,6 +200,10 @@ export class MemStorage implements IStorage {
     const now = new Date();
     const usageRecord: PlanUsage = {
       ...usage,
+      weeklyPlansUsed: usage.weeklyPlansUsed ?? 0,
+      monthlyPlansUsed: usage.monthlyPlansUsed ?? 0,
+      clientsUsed: usage.clientsUsed ?? 0,
+      subscriptionId: usage.subscriptionId ?? null,
       id,
       createdAt: now,
       updatedAt: now,

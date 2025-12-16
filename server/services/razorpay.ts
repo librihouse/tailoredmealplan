@@ -60,7 +60,7 @@ export async function createRazorpayOrder(params: {
 
     return {
       orderId: order.id,
-      amount: order.amount,
+      amount: typeof order.amount === 'string' ? parseInt(order.amount, 10) : order.amount,
       currency: order.currency,
     };
   } catch (error: any) {

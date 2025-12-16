@@ -86,8 +86,10 @@ app.use((req, res, next) => {
   if (process.env.NODE_ENV === "production") {
     serveStatic(app);
   } else {
-    const { setupVite } = await import("./vite");
-    await setupVite(httpServer, app);
+    // Vite setup removed - using Next.js now
+    // const { setupVite } = await import("./vite");
+    // await setupVite(httpServer, app);
+    serveStatic(app); // Fallback to static serving in dev too
   }
 
   // ALWAYS serve the app on the port specified in the environment variable PORT
