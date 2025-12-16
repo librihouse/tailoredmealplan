@@ -33,7 +33,7 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "50mb",
     },
   },
-  // Configure API routes
+  // Configure headers
   async headers() {
     return [
       {
@@ -43,6 +43,21 @@ const nextConfig: NextConfig = {
           { key: "Access-Control-Allow-Origin", value: "*" },
           { key: "Access-Control-Allow-Methods", value: "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
           { key: "Access-Control-Allow-Headers", value: "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization" },
+        ],
+      },
+      {
+        source: "/(.*)",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "X-XSS-Protection", value: "1; mode=block" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        ],
+      },
+      {
+        source: "/static/(.*)",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
         ],
       },
     ];
