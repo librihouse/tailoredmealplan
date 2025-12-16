@@ -1,3 +1,12 @@
+// Load environment variables from .env.local
+import { config } from "dotenv";
+import { resolve } from "path";
+
+// Load .env.local file (takes precedence over .env)
+config({ path: resolve(process.cwd(), ".env.local") });
+// Also try .env as fallback
+config({ path: resolve(process.cwd(), ".env") });
+
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
@@ -14,13 +23,14 @@ declare module "http" {
 
 app.use(
   express.json({
+    limit: "50mb", // Increased limit to handle base64-encoded images
     verify: (req, _res, buf) => {
       req.rawBody = buf;
     },
   }),
 );
 
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: false, limit: "50mb" }));
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {

@@ -5,18 +5,18 @@ export default function About() {
   return (
     <Layout>
       {/* Hero */}
-      <section className="bg-bg-sage py-20">
-        <div className="container max-w-screen-xl px-4 text-center">
-          <h1 className="font-serif text-4xl md:text-6xl font-bold text-text-dark mb-6">Our Mission</h1>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+      <section className="bg-black text-white py-20">
+        <div className="container max-w-screen-xl mx-auto px-4 text-center">
+          <h1 className="font-heading text-4xl md:text-6xl font-bold uppercase mb-6 text-white">Our Mission</h1>
+          <p className="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
             To make personalized nutrition accessible to everyone, regardless of their culture, religion, or health condition.
           </p>
         </div>
       </section>
 
       {/* Story */}
-      <section className="py-20">
-        <div className="container max-w-screen-lg px-4">
+      <section className="bg-gray-900 py-20">
+        <div className="container max-w-screen-lg mx-auto px-4">
           <div className="grid md:grid-cols-2 gap-12 items-center">
              <div>
                <div className="w-full aspect-square bg-gray-200 rounded-2xl overflow-hidden relative">
@@ -24,7 +24,7 @@ export default function About() {
                </div>
              </div>
              <div className="space-y-6">
-               <h2 className="font-serif text-3xl font-bold text-text-dark">Why We Started</h2>
+               <h2 className="font-serif text-3xl font-bold text-white">Why We Started</h2>
                <p className="text-muted-foreground leading-relaxed">
                  TailoredMealPlan was born from a frustration with generic diet apps. Most platforms ignore cultural foods, religious restrictions, and the reality of family cooking.
                </p>
@@ -37,10 +37,10 @@ export default function About() {
       </section>
 
       {/* Values */}
-      <section className="py-20 bg-bg-cream">
-        <div className="container max-w-screen-xl px-4">
+      <section className="py-20 bg-black">
+        <div className="container max-w-screen-xl mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="font-serif text-3xl font-bold text-text-dark">Our Core Values</h2>
+            <h2 className="font-serif text-3xl font-bold text-white">Our Core Values</h2>
           </div>
           
           <div className="grid md:grid-cols-4 gap-8">

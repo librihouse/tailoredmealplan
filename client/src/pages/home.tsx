@@ -81,7 +81,7 @@ export default function Home() {
       </section>
 
       {/* Cultural Inclusion / Food Grid */}
-      <section className="bg-white text-black py-24 md:py-32 overflow-hidden">
+      <section className="bg-gray-900 text-white py-24 md:py-32 overflow-hidden">
         <div className="container max-w-screen-2xl px-4 md:px-8">
           <motion.div 
             initial="hidden"
@@ -91,10 +91,10 @@ export default function Home() {
             className="text-center max-w-3xl mx-auto mb-20"
           >
             <span className="text-primary font-bold tracking-widest uppercase mb-4 block">No More Chicken & Broccoli</span>
-            <h2 className="font-heading text-5xl md:text-7xl font-bold uppercase mb-6 text-black">
+            <h2 className="font-heading text-5xl md:text-7xl font-bold uppercase mb-6 text-white">
               Culture on <br /> Your Plate
             </h2>
-            <p className="text-xl text-gray-600">
+            <p className="text-xl text-gray-400">
               Whether you eat Halal, Kosher, Vegan, or Spicy Szechuan—our AI builds your macros around the food you actually love.
             </p>
           </motion.div>
@@ -112,11 +112,11 @@ export default function Home() {
               { img: imgBowl, title: "Modern Fusion", desc: "Macro-balanced bowls for the busy athlete." }
             ].map((item, i) => (
               <motion.div key={i} variants={fadeInUp} className="group cursor-pointer">
-                <div className="aspect-[4/3] overflow-hidden mb-6 bg-gray-100">
+                <div className="aspect-[4/3] overflow-hidden mb-6 bg-gray-800">
                   <img src={item.img} alt={item.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                 </div>
-                <h3 className="font-heading text-3xl font-bold uppercase mb-2 group-hover:text-primary transition-colors">{item.title}</h3>
-                <p className="text-gray-600 font-medium">{item.desc}</p>
+                <h3 className="font-heading text-3xl font-bold uppercase mb-2 group-hover:text-primary transition-colors text-white">{item.title}</h3>
+                <p className="text-gray-400 font-medium">{item.desc}</p>
               </motion.div>
             ))}
           </motion.div>

@@ -9,43 +9,43 @@ import { Mail, MapPin, Clock } from "lucide-react";
 export default function Contact() {
   return (
     <Layout>
-      <div className="bg-bg-cream min-h-screen py-20">
-        <div className="container max-w-screen-xl px-4">
+      <div className="bg-black text-white min-h-screen py-20">
+        <div className="container max-w-screen-xl mx-auto px-4">
           <div className="text-center mb-16">
-            <h1 className="font-serif text-4xl font-bold text-text-dark mb-4">Contact Us</h1>
-            <p className="text-muted-foreground">Have questions? We're here to help.</p>
+            <h1 className="font-heading text-4xl md:text-5xl font-bold uppercase mb-4 text-white">Contact Us</h1>
+            <p className="text-gray-400">Have questions? We're here to help.</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
             {/* Info Cards */}
             <div className="space-y-6">
-              <Card>
+              <Card className="bg-gray-900/50 border-white/10">
                 <CardContent className="p-6 flex items-start gap-4">
                   <Mail className="h-6 w-6 text-primary shrink-0" />
                   <div>
-                    <h3 className="font-bold mb-1">Email Us</h3>
-                    <p className="text-sm text-muted-foreground">support@tailoredmealplan.com</p>
-                    <p className="text-sm text-muted-foreground">partners@tailoredmealplan.com</p>
+                    <h3 className="font-bold mb-1 text-white">Email Us</h3>
+                    <p className="text-sm text-gray-400">support@tailoredmealplan.com</p>
+                    <p className="text-sm text-gray-400">partners@tailoredmealplan.com</p>
                   </div>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="bg-gray-900/50 border-white/10">
                 <CardContent className="p-6 flex items-start gap-4">
                   <Clock className="h-6 w-6 text-primary shrink-0" />
                   <div>
-                    <h3 className="font-bold mb-1">Support Hours</h3>
-                    <p className="text-sm text-muted-foreground">Mon-Fri: 9am - 6pm EST</p>
-                    <p className="text-sm text-muted-foreground">Sat: 10am - 2pm EST</p>
+                    <h3 className="font-bold mb-1 text-white">Support Hours</h3>
+                    <p className="text-sm text-gray-400">Mon-Fri: 9am - 6pm EST</p>
+                    <p className="text-sm text-gray-400">Sat: 10am - 2pm EST</p>
                   </div>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="bg-gray-900/50 border-white/10">
                 <CardContent className="p-6 flex items-start gap-4">
                   <MapPin className="h-6 w-6 text-primary shrink-0" />
                   <div>
-                    <h3 className="font-bold mb-1">Headquarters</h3>
-                    <p className="text-sm text-muted-foreground">123 Nutrition Way</p>
-                    <p className="text-sm text-muted-foreground">Austin, TX 78701</p>
+                    <h3 className="font-bold mb-1 text-white">Headquarters</h3>
+                    <p className="text-sm text-gray-400">123 Nutrition Way</p>
+                    <p className="text-sm text-gray-400">Austin, TX 78701</p>
                   </div>
                 </CardContent>
               </Card>
@@ -53,7 +53,7 @@ export default function Contact() {
 
             {/* Contact Form */}
             <div className="md:col-span-2">
-              <Card className="h-full">
+              <Card className="h-full bg-gray-900/50 border-white/10">
                 <CardContent className="p-8 space-y-6">
                   <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-2">

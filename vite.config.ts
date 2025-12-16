@@ -6,6 +6,7 @@ import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 import { metaImagesPlugin } from "./vite-plugin-meta-images";
 
 export default defineConfig({
+  envPrefix: ['VITE_', 'NEXT_PUBLIC_'], // Allow both VITE_ and NEXT_PUBLIC_ prefixes
   plugins: [
     react(),
     runtimeErrorOverlay(),

@@ -1,15 +1,134 @@
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { Check, X, HelpCircle } from "lucide-react";
+import { Check, X, HelpCircle, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { createRazorpayOrder, verifyRazorpayPayment } from "@/lib/api";
+import { openRazorpayCheckout } from "@/lib/razorpay";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function Pricing() {
   const [isAnnual, setIsAnnual] = useState(false);
   const [view, setView] = useState<"b2c" | "b2b">("b2c");
+  const { isAuthenticated, user } = useAuth();
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const [processingPlan, setProcessingPlan] = useState<string | null>(null);
+
+  // Map plan names to plan IDs
+  const getPlanId = (planName: string): string => {
+    const planMap: Record<string, string> = {
+      "Free Tier": "free",
+      "Individual": "individual",
+      "Family": "family",
+      "Starter": "starter",
+      "Growth": "growth",
+      "Professional": "professional",
+      "Enterprise": "enterprise",
+    };
+    return planMap[planName] || planName.toLowerCase().replace(/\s+/g, "_");
+  };
+
+  const handleSubscribe = async (plan: any) => {
+    // Check if user is logged in
+    if (!isAuthenticated) {
+      // Determine user type from plan
+      const isB2BPlan = ["Starter", "Growth", "Professional", "Enterprise"].includes(plan.name);
+      const userType = isB2BPlan ? "professional" : "individual";
+      
+      toast({
+        title: "Login Required",
+        description: "Please log in to subscribe to a plan",
+        variant: "destructive",
+      });
+      setLocation(`/auth?userType=${userType}&redirect=/pricing`);
+      return;
+    }
+
+    // Skip payment for free tier
+    if (plan.name === "Free Tier") {
+      // Free tier is always individual
+      setLocation("/auth?userType=individual&redirect=/onboarding");
+      return;
+    }
+
+    setProcessingPlan(plan.name);
+
+    try {
+      const planId = getPlanId(plan.name);
+      const billingInterval = isAnnual ? "annual" : "monthly";
+
+      // Create Razorpay order
+      const orderData = await createRazorpayOrder({
+        planId,
+        billingInterval,
+      });
+
+      // Get user info
+      const userName = user?.user_metadata?.name || user?.email?.split("@")[0] || "User";
+      const userEmail = user?.email || "";
+
+      // Open Razorpay checkout
+      await openRazorpayCheckout({
+        orderId: orderData.orderId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        planName: `${plan.name} - ${billingInterval === "annual" ? "Annual" : "Monthly"}`,
+        userEmail,
+        userName,
+        onSuccess: async (response: any) => {
+          try {
+            // Verify payment
+            await verifyRazorpayPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              planId: orderData.planId,
+              billingInterval,
+            });
+
+            toast({
+              title: "Success!",
+              description: "Your subscription has been activated successfully!",
+            });
+
+            // Redirect to dashboard
+            setTimeout(() => {
+              setLocation("/dashboard");
+            }, 1500);
+          } catch (error: any) {
+            toast({
+              title: "Payment Verification Failed",
+              description: error.message || "Failed to verify payment. Please contact support.",
+              variant: "destructive",
+            });
+          } finally {
+            setProcessingPlan(null);
+          }
+        },
+        onFailure: (error: any) => {
+          toast({
+            title: "Payment Failed",
+            description: error.reason || "Payment was cancelled or failed. Please try again.",
+            variant: "destructive",
+          });
+          setProcessingPlan(null);
+        },
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to initiate payment. Please try again.",
+        variant: "destructive",
+      });
+      setProcessingPlan(null);
+    }
+  };
 
   const b2cPlans = [
     {
@@ -72,12 +191,14 @@ export default function Pricing() {
   const b2bPlans = [
     {
       name: "Starter",
-      price: "$49",
+      price: isAnnual ? "$24" : "$29",
       period: "per month",
       description: "For solo nutritionists and coaches.",
       features: [
-        "Up to 100 Clients",
-        "200 Meal Plans / Month",
+        "Up to 50 Clients",
+        "80 Weekly Plans / Month",
+        "10 Monthly Plans / Month",
+        "1 Team Seat",
         "Basic White-labeling",
         "PDF Export with Logo",
         "Client Dashboard",
@@ -88,17 +209,38 @@ export default function Pricing() {
       popular: false
     },
     {
+      name: "Growth",
+      price: isAnnual ? "$39" : "$49",
+      period: "per month",
+      description: "For expanding practices.",
+      features: [
+        "Up to 150 Clients",
+        "200 Weekly Plans / Month",
+        "25 Monthly Plans / Month",
+        "2 Team Seats",
+        "Full White-labeling",
+        "Custom Branding",
+        "Client Dashboard",
+        "Priority Email Support"
+      ],
+      limitations: [],
+      cta: "Start 14-Day Trial",
+      popular: false
+    },
+    {
       name: "Professional",
-      price: "$129",
+      price: isAnnual ? "$79" : "$99",
       period: "per month",
       description: "For growing clinics and gyms.",
       features: [
-        "Up to 500 Clients",
-        "1,500 Meal Plans / Month",
+        "Up to 400 Clients",
+        "500 Weekly Plans / Month",
+        "60 Monthly Plans / Month",
+        "5 Team Seats",
         "Full White-labeling",
         "Custom Branding",
         "Bulk Generation",
-        "3 Team Seats",
+        "API Access",
         "Priority Support"
       ],
       limitations: [],
@@ -107,16 +249,20 @@ export default function Pricing() {
     },
     {
       name: "Enterprise",
-      price: "$349",
+      price: isAnnual ? "$159" : "$199",
       period: "per month",
       description: "For large organizations.",
       features: [
-        "Up to 2,000 Clients",
-        "6,000 Meal Plans / Month",
+        "Up to 1,500 Clients",
+        "1,500 Weekly Plans / Month",
+        "150 Monthly Plans / Month",
+        "Unlimited Team Seats",
         "Complete White-labeling",
         "Custom Domain",
-        "Unlimited Team Members",
-        "Dedicated Account Manager"
+        "Dedicated Account Manager",
+        "SLA Guarantee",
+        "Advanced Analytics",
+        "API Access"
       ],
       limitations: [],
       cta: "Contact Sales",
@@ -194,7 +340,10 @@ export default function Pricing() {
             </div>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className={cn(
+            "grid gap-8",
+            view === "b2c" ? "md:grid-cols-3" : "md:grid-cols-2 lg:grid-cols-4"
+          )}>
             {plans.map((plan, index) => (
               <motion.div
                 key={index}
@@ -242,14 +391,24 @@ export default function Pricing() {
                   </CardContent>
 
                   <CardFooter>
-                    <Link href={view === "b2c" ? "/onboarding" : "/contact"} className="w-full">
-                      <Button className={cn(
+                    <Button
+                      onClick={() => handleSubscribe(plan)}
+                      disabled={processingPlan === plan.name}
+                      className={cn(
                         "w-full h-12 font-medium text-lg font-bold uppercase tracking-wide rounded-none",
-                        plan.popular ? "bg-primary hover:bg-primary/90 text-black" : "bg-transparent border-2 border-primary text-primary hover:bg-primary hover:text-black"
-                      )}>
-                        {plan.cta}
-                      </Button>
-                    </Link>
+                        plan.popular ? "bg-primary hover:bg-primary/90 text-black" : "bg-transparent border-2 border-primary text-primary hover:bg-primary hover:text-black",
+                        processingPlan === plan.name && "opacity-50 cursor-not-allowed"
+                      )}
+                    >
+                      {processingPlan === plan.name ? (
+                        <>
+                          <Spinner className="mr-2 h-4 w-4" />
+                          Processing...
+                        </>
+                      ) : (
+                        plan.cta
+                      )}
+                    </Button>
                   </CardFooter>
                 </Card>
               </motion.div>
@@ -264,7 +423,7 @@ export default function Pricing() {
             className="mt-16 text-center"
           >
              <h3 className="font-heading text-3xl font-bold mb-8 text-white uppercase">Frequently Asked Questions</h3>
-             <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto text-left">
+             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto text-left">
                <div className="bg-gray-900/50 border border-white/10 p-6 rounded-lg backdrop-blur">
                  <h4 className="font-bold mb-2 flex items-center gap-2 text-white"><HelpCircle className="h-4 w-4 text-primary"/> Can I cancel anytime?</h4>
                  <p className="text-gray-400 text-sm">Yes, you can cancel your subscription at any time. You'll keep access until the end of your billing period.</p>
@@ -273,6 +432,18 @@ export default function Pricing() {
                  <h4 className="font-bold mb-2 flex items-center gap-2 text-white"><HelpCircle className="h-4 w-4 text-primary"/> Do you offer refunds?</h4>
                  <p className="text-gray-400 text-sm">We offer a 7-day money-back guarantee for all paid plans if you're not satisfied.</p>
                </div>
+               {view === "b2b" && (
+                 <div className="bg-gray-900/50 border border-white/10 p-6 rounded-lg backdrop-blur">
+                   <h4 className="font-bold mb-2 flex items-center gap-2 text-white"><HelpCircle className="h-4 w-4 text-primary"/> What's the difference between weekly and monthly plans?</h4>
+                   <p className="text-gray-400 text-sm">Weekly plans cover 1-7 day meal plans, perfect for regular check-ins. Monthly plans are comprehensive 30-day plans with full grocery lists.</p>
+                 </div>
+               )}
+               {view === "b2b" && (
+                 <div className="bg-gray-900/50 border border-white/10 p-6 rounded-lg backdrop-blur">
+                   <h4 className="font-bold mb-2 flex items-center gap-2 text-white"><HelpCircle className="h-4 w-4 text-primary"/> Can I upgrade mid-cycle?</h4>
+                   <p className="text-gray-400 text-sm">Yes! When you upgrade, you'll get immediate access to higher limits and we'll prorate the cost.</p>
+                 </div>
+               )}
              </div>
           </motion.div>
         </div>

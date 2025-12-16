@@ -6,16 +6,76 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Link } from "wouter";
-import { CheckCircle, ArrowLeft } from "lucide-react";
+import { CheckCircle, ArrowLeft, AlertCircle } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function Auth() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const defaultTab = location.includes("login") ? "login" : "signup";
+  const { signUp, signIn } = useAuth();
+  
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  // Get user type and redirect URL from query params
+  const searchParams = new URLSearchParams(window.location.search);
+  const userType = searchParams.get("userType") || "individual"; // individual | professional
+  const redirect = searchParams.get("redirect");
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    try {
+      const name = `${firstName} ${lastName}`.trim() || undefined;
+      await signUp(email, password, name);
+      setSuccess(true);
+      
+      // Store user type temporarily in localStorage (until subscription is created)
+      if (userType === "professional") {
+        localStorage.setItem("pendingUserType", "professional");
+      }
+      
+      // Redirect after successful signup
+      setTimeout(() => {
+        // Both user types go to dashboard initially
+        // Onboarding will be prompted from dashboard if needed
+        setLocation(redirect || "/dashboard");
+      }, 1500);
+    } catch (err: any) {
+      setError(err.message || "Failed to create account");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    try {
+      await signIn(email, password);
+      // Redirect to specified URL or dashboard
+      setLocation(redirect || "/dashboard");
+    } catch (err: any) {
+      setError(err.message || "Failed to sign in");
+    } finally {
+      setLoading(false);
+    }
+  };
   
   return (
-    <div className="min-h-screen grid lg:grid-cols-2">
+    <div className="min-h-screen grid lg:grid-cols-2 bg-black">
       {/* Left Side - Form */}
-      <div className="flex items-center justify-center p-8 bg-bg-cream">
+      <div className="flex items-center justify-center p-8 bg-black">
         <div className="w-full max-w-md space-y-8">
           <Link href="/">
             <Button variant="ghost" className="mb-4 pl-0 hover:bg-transparent hover:text-primary">
@@ -24,7 +84,7 @@ export default function Auth() {
           </Link>
           
           <div className="mb-8">
-            <h1 className="font-serif text-3xl font-bold text-text-dark">Welcome to TailoredMealPlan</h1>
+            <h1 className="font-serif text-3xl font-bold text-white">Welcome to TailoredMealPlan</h1>
             <p className="text-muted-foreground mt-2">Your journey to better health starts here.</p>
           </div>
 
@@ -37,27 +97,56 @@ export default function Auth() {
             <TabsContent value="login">
               <Card className="border-none shadow-none bg-transparent">
                 <CardContent className="p-0 space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" placeholder="you@example.com" />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="password">Password</Label>
-                      <Link href="/forgot-password">
-                        <span className="text-xs text-primary hover:underline cursor-pointer">Forgot password?</span>
-                      </Link>
+                  {error && (
+                    <Alert variant="destructive" className="bg-red-900/50 border-red-500">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription className="text-red-200">{error}</AlertDescription>
+                    </Alert>
+                  )}
+                  <form onSubmit={handleSignIn} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input 
+                        id="email" 
+                        type="email" 
+                        placeholder="you@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        disabled={loading}
+                      />
                     </div>
-                    <Input id="password" type="password" />
-                  </div>
-                  <Button className="w-full bg-primary hover:bg-primary-light text-white">Log In</Button>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="password">Password</Label>
+                        <Link href="/forgot-password">
+                          <span className="text-xs text-primary hover:underline cursor-pointer">Forgot password?</span>
+                        </Link>
+                      </div>
+                      <Input 
+                        id="password" 
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        disabled={loading}
+                      />
+                    </div>
+                    <Button 
+                      type="submit"
+                      className="w-full bg-primary hover:bg-primary-light text-white"
+                      disabled={loading}
+                    >
+                      {loading ? "Signing in..." : "Log In"}
+                    </Button>
+                  </form>
                   
                   <div className="relative">
                     <div className="absolute inset-0 flex items-center">
                       <span className="w-full border-t" />
                     </div>
                     <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-bg-cream px-2 text-muted-foreground">Or continue with</span>
+                      <span className="bg-black px-2 text-gray-400">Or continue with</span>
                     </div>
                   </div>
                   
@@ -72,41 +161,97 @@ export default function Auth() {
             <TabsContent value="signup">
               <Card className="border-none shadow-none bg-transparent">
                 <CardContent className="p-0 space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="first-name">First name</Label>
-                      <Input id="first-name" placeholder="Jane" />
+                  {error && (
+                    <Alert variant="destructive" className="bg-red-900/50 border-red-500">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription className="text-red-200">{error}</AlertDescription>
+                    </Alert>
+                  )}
+                  {success && (
+                    <Alert className="bg-green-900/50 border-green-500">
+                      <CheckCircle className="h-4 w-4" />
+                      <AlertDescription className="text-green-200">
+                        Account created! Redirecting...
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  <form onSubmit={handleSignUp} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="first-name">First name</Label>
+                        <Input 
+                          id="first-name" 
+                          placeholder="Jane"
+                          value={firstName}
+                          onChange={(e) => setFirstName(e.target.value)}
+                          disabled={loading}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="last-name">Last name</Label>
+                        <Input 
+                          id="last-name" 
+                          placeholder="Doe"
+                          value={lastName}
+                          onChange={(e) => setLastName(e.target.value)}
+                          disabled={loading}
+                        />
+                      </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="last-name">Last name</Label>
-                      <Input id="last-name" placeholder="Doe" />
+                      <Label htmlFor="email-signup">Email</Label>
+                      <Input 
+                        id="email-signup" 
+                        type="email" 
+                        placeholder="you@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        disabled={loading}
+                      />
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email-signup">Email</Label>
-                    <Input id="email-signup" type="email" placeholder="you@example.com" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password-signup">Password</Label>
-                    <Input id="password-signup" type="password" />
-                    <p className="text-xs text-muted-foreground">Must be at least 8 characters.</p>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <input type="checkbox" id="terms" className="rounded border-gray-300 text-primary focus:ring-primary" />
-                    <label htmlFor="terms" className="text-sm text-muted-foreground">
-                      I agree to the <span className="text-primary hover:underline cursor-pointer">Terms</span> and <span className="text-primary hover:underline cursor-pointer">Privacy Policy</span>
-                    </label>
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="password-signup">Password</Label>
+                      <Input 
+                        id="password-signup" 
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        minLength={8}
+                        disabled={loading}
+                      />
+                      <p className="text-xs text-muted-foreground">Must be at least 8 characters.</p>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <input 
+                        type="checkbox" 
+                        id="terms" 
+                        className="rounded border-gray-300 text-primary focus:ring-primary"
+                        required
+                        disabled={loading}
+                      />
+                      <label htmlFor="terms" className="text-sm text-muted-foreground">
+                        I agree to the <span className="text-primary hover:underline cursor-pointer">Terms</span> and <span className="text-primary hover:underline cursor-pointer">Privacy Policy</span>
+                      </label>
+                    </div>
 
-                  <Button className="w-full bg-primary hover:bg-primary-light text-white">Create Account</Button>
+                    <Button 
+                      type="submit"
+                      className="w-full bg-primary hover:bg-primary-light text-white"
+                      disabled={loading}
+                    >
+                      {loading ? "Creating account..." : "Create Account"}
+                    </Button>
+                  </form>
                   
                   <div className="relative">
                     <div className="absolute inset-0 flex items-center">
                       <span className="w-full border-t" />
                     </div>
                     <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-bg-cream px-2 text-muted-foreground">Or continue with</span>
+                      <span className="bg-black px-2 text-gray-400">Or continue with</span>
                     </div>
                   </div>
                   

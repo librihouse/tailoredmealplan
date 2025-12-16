@@ -33,50 +33,47 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* LIGHT MODE - Modern Wellness / Gym Theme */
+/* FORCE DARK MODE - Set root to dark values */
 :root {
-  /* Vibrant, High Energy Palette */
-  
   /* Primary: Electric Lime / Wellness Green */
-  /* HSL 84, 100%, 59% (#BFFF00 sort of vibe but usable) */
   --primary: 84 80% 45%; 
-  --primary-foreground: 0 0% 100%;
+  --primary-foreground: 0 0% 0%;
   
-  /* Backgrounds: Clean White + Light Greys */
-  --background: 0 0% 100%;
-  --foreground: 0 0% 10%; /* Nearly Black */
+  /* Backgrounds: BLACK */
+  --background: 0 0% 0%; /* Pure black */
+  --foreground: 0 0% 98%; /* White text */
+  
+  /* Muted: Dark Grey */
+  --muted: 240 10% 12%;
+  --muted-foreground: 240 5% 65%;
 
-  /* Muted: Light Cool Grey */
-  --muted: 210 20% 96%;
-  --muted-foreground: 215 10% 45%;
-
-  --card: 0 0% 100%;
-  --card-foreground: 0 0% 10%;
-
-  --popover: 0 0% 100%;
-  --popover-foreground: 0 0% 10%;
-
-  /* Secondary: Deep Charcoal / Black (for contrast) */
-  --secondary: 0 0% 10%;
-  --secondary-foreground: 0 0% 100%;
-
+  --card: 240 10% 8%;
+  --card-foreground: 0 0% 98%;
+  
+  --popover: 240 10% 8%;
+  --popover-foreground: 0 0% 98%;
+  
+  /* Secondary: White for contrast */
+  --secondary: 0 0% 98%;
+  --secondary-foreground: 0 0% 0%;
+  
   /* Accent: Energetic Coral/Orange */
-  --accent: 16 90% 60%;
+  --accent: 16 90% 65%;
   --accent-foreground: 0 0% 100%;
-
-  --destructive: 0 84.2% 60.2%;
+  
+  --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 0 0% 98%;
-
-  --border: 214 20% 90%;
-  --input: 214 20% 90%;
-  --ring: 84 80% 45%;
-
-  --radius: 0.75rem; /* Larger, softer corners */
+  
+  --border: 240 10% 12%;
+  --input: 240 10% 12%;
+  --ring: 84 80% 55%;
+  
+  --radius: 0.75rem;
 }
 
 .dark {
-  /* Dark Mode: "Night Gym" Vibe */
-  --background: 240 10% 4%; /* Almost black */
+  /* Same as root - already dark */
+  --background: 0 0% 0%;
   --foreground: 0 0% 98%;
   
   --card: 240 10% 8%;
@@ -85,7 +82,7 @@
   --popover: 240 10% 8%;
   --popover-foreground: 0 0% 98%;
   
-  --primary: 84 80% 55%; /* Brighter Lime */
+  --primary: 84 80% 55%;
   --primary-foreground: 0 0% 0%;
   
   --secondary: 0 0% 98%;
@@ -109,8 +106,11 @@
   * {
     @apply border-border;
   }
+  html {
+    @apply bg-black;
+  }
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply font-sans antialiased bg-black text-white;
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading uppercase tracking-wide font-bold;
