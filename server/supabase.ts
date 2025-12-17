@@ -5,22 +5,23 @@
 
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // For admin operations
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.VITE_SUPABASE_URL || '') as string;
+const supabaseServiceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '') as string;
+const supabaseAnonKey = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || '') as string;
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.warn("Missing Supabase environment variables. Some features may not work.");
 }
 
 // Client for user operations (uses anon key)
+// Ensure we always pass strings to createClient to avoid .trim() errors
 export const supabase = supabaseUrl && supabaseAnonKey
-  ? createClient(supabaseUrl, supabaseAnonKey)
+  ? createClient(String(supabaseUrl), String(supabaseAnonKey))
   : null;
 
 // Admin client for server-side operations (uses service role key)
 export const supabaseAdmin = supabaseUrl && supabaseServiceKey
-  ? createClient(supabaseUrl, supabaseServiceKey, {
+  ? createClient(String(supabaseUrl), String(supabaseServiceKey), {
       auth: {
         autoRefreshToken: false,
         persistSession: false,

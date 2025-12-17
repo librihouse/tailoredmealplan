@@ -8,20 +8,28 @@ import { createClient } from "@supabase/supabase-js";
 // Next.js environment variables - NEXT_PUBLIC_ prefix makes them available on client
 const supabaseUrl = 
   process.env.NEXT_PUBLIC_SUPABASE_URL ||
-  (typeof window !== 'undefined' && (window as any).__ENV__?.NEXT_PUBLIC_SUPABASE_URL);
+  (typeof window !== 'undefined' && (window as any).__ENV__?.NEXT_PUBLIC_SUPABASE_URL) ||
+  '';
 
 const supabaseAnonKey = 
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-  (typeof window !== 'undefined' && (window as any).__ENV__?.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  (typeof window !== 'undefined' && (window as any).__ENV__?.NEXT_PUBLIC_SUPABASE_ANON_KEY) ||
+  '';
 
-if (!supabaseUrl || !supabaseAnonKey) {
+// Only log error in browser, not during build
+if (typeof window !== 'undefined' && (!supabaseUrl || !supabaseAnonKey)) {
   console.error("Missing Supabase environment variables.");
   console.error("Expected: VITE_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_URL");
   console.error("Expected: VITE_SUPABASE_ANON_KEY or NEXT_PUBLIC_SUPABASE_ANON_KEY");
   console.error("Please check your .env.local file.");
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+// Ensure we always pass strings to createClient to avoid .trim() errors
+// Use placeholder values during build if env vars are missing
+const url = String(supabaseUrl || 'https://placeholder.supabase.co');
+const key = String(supabaseAnonKey || 'placeholder-key');
+
+export const supabase = createClient(url, key, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
