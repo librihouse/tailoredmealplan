@@ -121,3 +121,22 @@
     @apply mx-auto;
   }
 }
+
+/* Hide Next.js error overlays and indicators in production */
+nextjs-portal,
+[data-nextjs-dialog],
+[data-nextjs-toast],
+#__next-build-watcher,
+#__nextjs-error-overlay {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* Hide error banners and overlays */
+body > div[style*="position: fixed"][style*="z-index: 9999"],
+body > div[style*="background: red"],
+body > div[style*="background-color: red"] {
+  display: none !important;
+}

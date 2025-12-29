@@ -2,7 +2,7 @@
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowRight, ClipboardList, Cpu, UtensilsCrossed, ShoppingCart, TrendingUp } from "lucide-react";
+import { ArrowRight, ClipboardList, Cpu, UtensilsCrossed, Globe, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function HowItWorks() {
@@ -33,9 +33,9 @@ export default function HowItWorks() {
     },
     {
       number: "05",
-      title: "Smart Shopping",
-      desc: "Get an automated grocery list organized by store aisle to save time.",
-      icon: ShoppingCart,
+      title: "Cultural Cuisine Experience",
+      desc: "Enjoy authentic meals tailored to your cultural background—from Halal and Kosher to regional favorites like Mediterranean, South Asian, and more.",
+      icon: Globe,
     },
     {
       number: "06",

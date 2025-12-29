@@ -18,12 +18,33 @@ export default function CustomerTypeSelection() {
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
 
-  // Redirect if not authenticated
+  // Redirect if not authenticated or if customer_type is already set
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push("/auth?redirect=/customer-type-selection");
-    }
-  }, [isAuthenticated, authLoading, router.push]);
+    const checkAndRedirect = async () => {
+      if (!authLoading && !isAuthenticated) {
+        router.push("/auth?redirect=/customer-type-selection");
+        return;
+      }
+      
+      if (!authLoading && user) {
+        try {
+          const { data: { user: currentUser } } = await supabase.auth.getUser();
+          const customerType = currentUser?.user_metadata?.customer_type;
+          
+          // If customer_type is already set, redirect to appropriate onboarding
+          if (customerType === "business") {
+            router.push("/professional-onboarding");
+          } else if (customerType === "individual") {
+            router.push("/onboarding");
+          }
+        } catch (error) {
+          // Ignore errors, let user proceed
+        }
+      }
+    };
+    
+    checkAndRedirect();
+  }, [isAuthenticated, authLoading, user, router]);
 
   const handleSelectType = async (customerType: "individual" | "business") => {
     if (saving) return;

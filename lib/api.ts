@@ -32,48 +32,132 @@ export async function apiRequest<T>(
     throw new Error("Not authenticated. Please sign in again.");
   }
 
-  const response = await fetch(`/api${endpoint}`, {
-    ...options,
-    headers: {
-      ...options.headers,
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  // Create an AbortController for timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minutes timeout for meal plan generation (weekly/monthly plans need more time)
 
-  if (!response.ok) {
-    // If 401, try refreshing the session once more and retry
-    if (response.status === 401) {
-      console.log("Received 401, attempting to refresh session again...");
-      const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
-      
-      if (refreshData.session?.access_token && !refreshError) {
-        console.log("Session refreshed, retrying request...");
-        // Retry the request with the new token
-        const retryResponse = await fetch(`/api${endpoint}`, {
-          ...options,
-          headers: {
-            ...options.headers,
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${refreshData.session.access_token}`,
-          },
-        });
-        
-        if (!retryResponse.ok) {
-          const error = await retryResponse.json().catch(() => ({ error: "Authentication failed" }));
-          throw new Error(error.error || `HTTP ${retryResponse.status}`);
-        }
-        
-        return retryResponse.json();
-      } else {
-        // Refresh failed, user needs to sign in again
-        throw new Error("Your session has expired. Please sign in again.");
-      }
+  let response: Response;
+  try {
+    response = await fetch(`/api${endpoint}`, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        ...options.headers,
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    clearTimeout(timeoutId);
+  } catch (fetchError: any) {
+    clearTimeout(timeoutId);
+    if (fetchError.name === 'AbortError') {
+      throw new Error("Request timeout: The meal plan generation is taking longer than expected. Please try again.");
     }
-    
-    const error = await response.json().catch(() => ({ error: "Unknown error" }));
-    throw new Error(error.error || `HTTP ${response.status}`);
+    throw fetchError;
   }
+
+    if (!response.ok) {
+      // If 401, try refreshing the session once more and retry
+      if (response.status === 401) {
+        console.log("Received 401, attempting to refresh session again...");
+        const { data: refreshData, error: refreshError } = await supabase.auth.refreshSession();
+        
+        if (refreshData.session?.access_token && !refreshError) {
+          console.log("Session refreshed, retrying request...");
+          // Retry the request with the new token (with timeout)
+          const retryController = new AbortController();
+          const retryTimeoutId = setTimeout(() => retryController.abort(), 300000);
+          
+          let retryResponse: Response;
+          try {
+            retryResponse = await fetch(`/api${endpoint}`, {
+              ...options,
+              signal: retryController.signal,
+              headers: {
+                ...options.headers,
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${refreshData.session.access_token}`,
+              },
+            });
+            clearTimeout(retryTimeoutId);
+          } catch (retryFetchError: any) {
+            clearTimeout(retryTimeoutId);
+            if (retryFetchError.name === 'AbortError') {
+              throw new Error("Request timeout: The meal plan generation is taking longer than expected. Please try again.");
+            }
+            throw retryFetchError;
+          }
+          
+          if (!retryResponse.ok) {
+            // Try to extract error message from response
+            let errorMessage = "Authentication failed";
+            try {
+              const errorData = await retryResponse.json();
+              errorMessage = errorData.error || errorMessage;
+            } catch {
+              // If JSON parsing fails, try to get text
+              try {
+                const errorText = await retryResponse.text();
+                if (errorText) {
+                  errorMessage = errorText.substring(0, 200); // Limit length
+                }
+              } catch {
+                // Fallback to status-based message
+                errorMessage = `HTTP ${retryResponse.status}: ${retryResponse.statusText}`;
+              }
+            }
+            throw new Error(errorMessage);
+          }
+          
+          return retryResponse.json();
+        } else {
+          // Refresh failed, user needs to sign in again
+          throw new Error("Your session has expired. Please sign in again.");
+        }
+      }
+      
+      // Try to extract error message from response
+      let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      try {
+        // First try to parse as JSON
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorData.message || errorMessage;
+      } catch {
+        // If JSON parsing fails, try to get text
+        try {
+          const errorText = await response.text();
+          if (errorText && errorText.trim()) {
+            // Try to extract meaningful error from HTML or plain text
+            const textMatch = errorText.match(/(?:error|message)[\s:=]+([^\n<]+)/i);
+            errorMessage = textMatch ? textMatch[1].trim().substring(0, 200) : errorText.substring(0, 200);
+          } else {
+            // No error text, use status-based message
+            errorMessage = `Request failed with status ${response.status}`;
+          }
+        } catch {
+          // If all else fails, use status-based message
+          errorMessage = `Request failed with status ${response.status}`;
+        }
+      }
+      
+      // Provide more context based on status code
+      if (response.status === 429) {
+        // Rate limit or quota exceeded
+        errorMessage = errorMessage.includes("quota") || errorMessage.includes("limit") 
+          ? errorMessage 
+          : `Weekly plan limit reached. Please check your input and try again.`;
+      } else if (response.status === 500) {
+        errorMessage = `Server error: ${errorMessage}. Please try again later or contact support.`;
+      } else if (response.status === 403) {
+        errorMessage = `Access denied: ${errorMessage}. You may not have permission to perform this action.`;
+      } else if (response.status === 404) {
+        errorMessage = `Not found: ${errorMessage}. The requested resource could not be found.`;
+      } else if (response.status >= 400 && response.status < 500) {
+        errorMessage = `Request error: ${errorMessage}. Please check your input and try again.`;
+      }
+      
+      throw new Error(errorMessage);
+    }
 
   return response.json();
 }
@@ -86,6 +170,7 @@ export async function getQuota() {
     weeklyPlans: { used: number; limit: number };
     monthlyPlans: { used: number; limit: number };
     clients: { used: number; limit: number };
+    credits: { used: number; limit: number };
     resetDate: string;
   }>("/mealplan/quota");
 }
@@ -103,6 +188,7 @@ export async function generateMealPlan(data: {
     calories?: number;
     duration?: number;
   };
+  familyMemberId?: string;
 }) {
   return apiRequest<{
     success: boolean;
@@ -243,6 +329,31 @@ export async function cancelSubscription() {
 }
 
 /**
+ * Export meal plan as PDF
+ */
+export async function exportMealPlanPDF(planId: string): Promise<Blob> {
+  const session = await supabase.auth.getSession();
+  if (!session.data.session?.access_token) {
+    throw new Error("Not authenticated");
+  }
+
+  const response = await fetch(`/api/mealplan/${planId}/export-pdf`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${session.data.session.access_token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: "Failed to export PDF" }));
+    throw new Error(errorData.error || "Failed to export PDF");
+  }
+
+  return response.blob();
+}
+
+
+/**
  * Save individual user profile (onboarding data)
  * For simplified onboarding, we just mark it as complete
  * Detailed questionnaire will be asked when generating meal plans
@@ -273,7 +384,7 @@ export async function saveUserProfile(data: {
   return apiRequest<{
     success: boolean;
     profile: any;
-  }>("/profile/save", {
+  }>("/profile", {
     method: "POST",
     body: JSON.stringify(data),
   });
@@ -326,4 +437,83 @@ export async function getOnboardingStatus() {
     type: "individual" | "business";
   }>("/profile/onboarding-status");
 }
+
+/**
+ * Get all family members for the current user
+ */
+export async function getFamilyMembers() {
+  return apiRequest<{
+    members: Array<{
+      id: string;
+      name: string;
+      age?: number;
+      gender?: string;
+      height?: number;
+      current_weight?: number;
+      target_weight?: number;
+      activity_level?: string;
+      religious_diet?: string;
+      medical_conditions?: string[];
+      created_at: string;
+    }>;
+  }>("/family/members");
+}
+
+/**
+ * Add a new family member
+ */
+export async function addFamilyMember(data: {
+  name: string;
+  age?: number;
+  gender?: string;
+  height?: number;
+  currentWeight?: number;
+  targetWeight?: number;
+  activityLevel?: string;
+  religiousDiet?: string;
+  medicalConditions?: string[];
+}) {
+  return apiRequest<{
+    success: boolean;
+    member: any;
+  }>("/family/members", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * Delete a family member
+ */
+export async function deleteFamilyMember(memberId: string) {
+  return apiRequest<{
+    success: boolean;
+    message: string;
+  }>(`/family/members/${memberId}`, {
+    method: "DELETE",
+  });
+}
+
+/**
+ * Get meal plan history
+ */
+export async function getMealPlanHistory(filters?: {
+  type?: "daily" | "weekly" | "monthly";
+  familyMemberId?: string;
+  limit?: number;
+  offset?: number;
+}) {
+  const params = new URLSearchParams();
+  if (filters?.type) params.append("type", filters.type);
+  if (filters?.familyMemberId) params.append("familyMemberId", filters.familyMemberId);
+  if (filters?.limit) params.append("limit", filters.limit.toString());
+  if (filters?.offset) params.append("offset", filters.offset.toString());
+
+  const query = params.toString();
+  return apiRequest<{
+    plans: any[];
+    total: number;
+  }>(`/mealplan/history${query ? `?${query}` : ""}`);
+}
+
 

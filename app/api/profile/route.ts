@@ -4,22 +4,52 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/server/supabase";
+import { supabaseAdmin, supabase } from "@/server/supabase";
 import { authenticateRequest, log } from "@/lib/api-helpers";
 
+// Use admin client if available, otherwise fallback to regular client
+const getSupabaseClient = () => supabaseAdmin || supabase;
+
 /**
- * POST /api/profile/save
+ * POST /api/profile
  * Save individual user profile (onboarding data)
  */
 export async function POST(request: NextRequest) {
   try {
+    // Authenticate request
     const authResult = await authenticateRequest(request);
     if (authResult instanceof NextResponse) {
       return authResult;
     }
     const { userId } = authResult;
 
-    const body = await request.json();
+    // Validate Supabase client
+    const dbClient = getSupabaseClient();
+    if (!dbClient) {
+      const isDevelopment = process.env.NODE_ENV === "development";
+      const errorMessage = isDevelopment
+        ? "Database not configured: Supabase credentials are missing. Please check your environment variables."
+        : "Database service is temporarily unavailable. Please try again later.";
+      
+      log(`[ERROR] Supabase client not initialized.`, "profile");
+      return NextResponse.json(
+        { error: errorMessage },
+        { status: 500 }
+      );
+    }
+
+    // Parse request body
+    let body;
+    try {
+      body = await request.json();
+    } catch (parseError: any) {
+      log(`[ERROR] Failed to parse request body: ${parseError.message}`, "profile");
+      return NextResponse.json(
+        { error: "Invalid request data. Please try again." },
+        { status: 400 }
+      );
+    }
+
     const {
       onboardingCompleted,
       gender,
@@ -36,22 +66,43 @@ export async function POST(request: NextRequest) {
       transitionInfo,
     } = body;
 
-    if (!supabaseAdmin) {
+    // Validate userId
+    if (!userId || typeof userId !== "string") {
+      log(`[ERROR] Invalid userId: ${userId}`, "profile");
       return NextResponse.json(
-        { error: "Database not configured" },
-        { status: 500 }
+        { error: "Invalid user authentication. Please sign in again." },
+        { status: 401 }
       );
     }
 
     // Check if profile already exists
-    const { data: existingProfile } = await supabaseAdmin
-      .from("user_profiles")
-      .select("id")
-      .eq("user_id", userId)
-      .single();
+    let existingProfile;
+    try {
+      const { data, error } = await dbClient
+        .from("user_profiles")
+        .select("id")
+        .eq("user_id", userId)
+        .single();
 
-    // For simplified onboarding, we just mark it as complete
-    // Detailed questionnaire data will be collected when generating meal plans
+      if (error && error.code !== "PGRST116") {
+        // PGRST116 is "not found" which is expected for new profiles
+        log(`[ERROR] Database query error when checking existing profile: ${error.message} (code: ${error.code})`, "profile");
+        return NextResponse.json(
+          { error: "Database error. Please try again later." },
+          { status: 500 }
+        );
+      }
+
+      existingProfile = data;
+    } catch (queryError: any) {
+      log(`[ERROR] Exception when checking existing profile: ${queryError.message}`, "profile");
+      return NextResponse.json(
+        { error: "Database connection error. Please try again later." },
+        { status: 500 }
+      );
+    }
+
+    // Build profile data object
     const profileData: any = {
       user_id: userId,
       onboarding_completed: onboardingCompleted !== undefined ? onboardingCompleted : true,
@@ -71,62 +122,161 @@ export async function POST(request: NextRequest) {
     if (conditions !== undefined) profileData.conditions = Array.isArray(conditions) ? conditions : [];
     if (allergies !== undefined) profileData.allergies = Array.isArray(allergies) ? allergies : [];
     
-    // Store transition information as JSON for trans-friendly support
+    // Store transition information as JSONB for trans-friendly support
     if (transitionInfo !== undefined && transitionInfo !== null) {
-      profileData.transition_info = JSON.stringify(transitionInfo);
+      try {
+        // Validate that transitionInfo is an object
+        if (typeof transitionInfo === "object" && !Array.isArray(transitionInfo) && transitionInfo !== null) {
+          // JSONB accepts objects directly - Supabase will handle the conversion
+          profileData.transition_info = transitionInfo;
+          log(`[INFO] Storing transition_info for user: ${userId}`, "profile");
+        } else if (typeof transitionInfo === "string") {
+          // If it's a string, try to parse it
+          try {
+            const parsed = JSON.parse(transitionInfo);
+            if (typeof parsed === "object" && !Array.isArray(parsed)) {
+              profileData.transition_info = parsed;
+              log(`[INFO] Parsed and storing transition_info from string for user: ${userId}`, "profile");
+            } else {
+              log(`[WARN] Invalid transitionInfo format after parsing, skipping: ${JSON.stringify(transitionInfo)}`, "profile");
+            }
+          } catch (parseError: any) {
+            log(`[WARN] Failed to parse transitionInfo string: ${parseError.message}`, "profile");
+            // Continue without transition info rather than failing
+          }
+        } else {
+          log(`[WARN] Invalid transitionInfo format, skipping: ${JSON.stringify(transitionInfo)}`, "profile");
+        }
+      } catch (transitionError: any) {
+        log(`[ERROR] Exception processing transitionInfo: ${transitionError.message}`, "profile");
+        log(`[ERROR] transitionInfo value: ${JSON.stringify(transitionInfo)}`, "profile");
+        // Continue without transition info rather than failing
+      }
     }
 
+    // Save profile (insert or update)
     let result;
-    if (existingProfile) {
-      // Update existing profile
-      const { data, error } = await supabaseAdmin
-        .from("user_profiles")
-        .update(profileData)
-        .eq("user_id", userId)
-        .select()
-        .single();
+    try {
+      if (existingProfile) {
+        // Update existing profile
+        log(`Updating existing profile for user: ${userId}`, "profile");
+        const { data, error } = await dbClient
+          .from("user_profiles")
+          .update(profileData)
+          .eq("user_id", userId)
+          .select()
+          .single();
 
-      if (error) {
-        log(`Error updating user profile: ${error.message}`, "profile");
-        return NextResponse.json(
-          { error: "Failed to update profile" },
-          { status: 500 }
-        );
+        if (error) {
+          log(`[ERROR] Database error updating profile: ${error.message} (code: ${error.code}, details: ${error.details || "N/A"})`, "profile");
+          
+          // Provide more specific error messages based on error code
+          if (error.code === "23505") {
+            return NextResponse.json(
+              { error: "Profile already exists. Please refresh the page." },
+              { status: 409 }
+            );
+          } else if (error.code === "23503") {
+            return NextResponse.json(
+              { error: "Invalid user reference. Please sign in again." },
+              { status: 400 }
+            );
+          } else if (error.code === "42501") {
+            return NextResponse.json(
+              { error: "Permission denied. Please contact support." },
+              { status: 403 }
+            );
+          }
+          
+          return NextResponse.json(
+            { error: `Failed to update profile: ${error.message}` },
+            { status: 500 }
+          );
+        }
+
+        if (!data) {
+          log(`[ERROR] Update succeeded but no data returned for user: ${userId}`, "profile");
+          return NextResponse.json(
+            { error: "Profile update completed but data could not be retrieved." },
+            { status: 500 }
+          );
+        }
+
+        result = data;
+      } else {
+        // Create new profile
+        log(`Creating new profile for user: ${userId}`, "profile");
+        const { data, error } = await dbClient
+          .from("user_profiles")
+          .insert({
+            ...profileData,
+            created_at: new Date().toISOString(),
+          })
+          .select()
+          .single();
+
+        if (error) {
+          log(`[ERROR] Database error creating profile: ${error.message} (code: ${error.code}, details: ${error.details || "N/A"})`, "profile");
+          
+          // Provide more specific error messages based on error code
+          if (error.code === "23505") {
+            return NextResponse.json(
+              { error: "Profile already exists. Please refresh the page." },
+              { status: 409 }
+            );
+          } else if (error.code === "23503") {
+            return NextResponse.json(
+              { error: "Invalid user reference. Please sign in again." },
+              { status: 400 }
+            );
+          } else if (error.code === "42501") {
+            return NextResponse.json(
+              { error: "Permission denied. Please contact support." },
+              { status: 403 }
+            );
+          } else if (error.code === "23502") {
+            return NextResponse.json(
+              { error: "Required fields are missing. Please check your input." },
+              { status: 400 }
+            );
+          }
+          
+          return NextResponse.json(
+            { error: `Failed to create profile: ${error.message}` },
+            { status: 500 }
+          );
+        }
+
+        if (!data) {
+          log(`[ERROR] Insert succeeded but no data returned for user: ${userId}`, "profile");
+          return NextResponse.json(
+            { error: "Profile created but data could not be retrieved." },
+            { status: 500 }
+          );
+        }
+
+        result = data;
       }
-
-      result = data;
-    } else {
-      // Create new profile
-      const { data, error } = await supabaseAdmin
-        .from("user_profiles")
-        .insert({
-          ...profileData,
-          created_at: new Date().toISOString(),
-        })
-        .select()
-        .single();
-
-      if (error) {
-        log(`Error creating user profile: ${error.message}`, "profile");
-        return NextResponse.json(
-          { error: "Failed to create profile" },
-          { status: 500 }
-        );
-      }
-
-      result = data;
+    } catch (dbError: any) {
+      log(`[ERROR] Exception during profile save operation: ${dbError.message}`, "profile");
+      log(`[ERROR] Stack trace: ${dbError.stack}`, "profile");
+      return NextResponse.json(
+        { error: "Database operation failed. Please try again later." },
+        { status: 500 }
+      );
     }
 
-    log(`User profile saved for user: ${userId}`, "profile");
+    log(`[SUCCESS] User profile saved successfully for user: ${userId}`, "profile");
 
     return NextResponse.json({
       success: true,
       profile: result,
     });
   } catch (error: any) {
-    log(`Error in profile/save: ${error.message}`, "profile");
+    log(`[ERROR] Unexpected error in profile/save: ${error.message}`, "profile");
+    log(`[ERROR] Stack trace: ${error.stack}`, "profile");
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "An unexpected error occurred. Please try again later." },
       { status: 500 }
     );
   }
@@ -144,15 +294,23 @@ export async function GET(request: NextRequest) {
     }
     const { userId } = authResult;
 
-    if (!supabaseAdmin) {
+    // Validate Supabase client
+    const getDbClient = getSupabaseClient();
+    if (!getDbClient) {
+      const isDevelopment = process.env.NODE_ENV === "development";
+      const errorMessage = isDevelopment
+        ? "Database not configured: Supabase credentials are missing. Please check your environment variables."
+        : "Database service is temporarily unavailable. Please try again later.";
+      
+      log(`[ERROR] Supabase client not initialized.`, "profile");
       return NextResponse.json(
-        { error: "Database not configured" },
+        { error: errorMessage },
         { status: 500 }
       );
     }
 
     // Try to get subscription to determine user type
-    const { data: subscription } = await supabaseAdmin
+    const { data: subscription } = await getDbClient
       .from("subscriptions")
       .select("plan_id")
       .eq("user_id", userId)
@@ -164,7 +322,7 @@ export async function GET(request: NextRequest) {
 
     if (isB2BPlan) {
       // Get business profile
-      const { data: businessProfile, error } = await supabaseAdmin
+      const { data: businessProfile, error } = await getDbClient
         .from("business_profiles")
         .select("*")
         .eq("user_id", userId)
@@ -185,7 +343,7 @@ export async function GET(request: NextRequest) {
       });
     } else {
       // Get individual profile
-      const { data: userProfile, error } = await supabaseAdmin
+      const { data: userProfile, error } = await getDbClient
         .from("user_profiles")
         .select("*")
         .eq("user_id", userId)

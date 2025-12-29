@@ -22,7 +22,7 @@ export function Footer() {
               <li><Link href="/how-it-works" className="hover:text-primary transition-colors">HOW IT WORKS</Link></li>
               <li><Link href="/features" className="hover:text-primary transition-colors">FEATURES</Link></li>
               <li><Link href="/pricing" className="hover:text-primary transition-colors">PRICING</Link></li>
-              <li><Link href="/professionals" className="hover:text-primary transition-colors">FOR COACHES</Link></li>
+              <li><Link href="/credits" className="hover:text-primary transition-colors">CREDITS</Link></li>
             </ul>
           </div>
 
@@ -43,7 +43,7 @@ export function Footer() {
         </div>
         
         <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center text-xs font-bold text-gray-600 uppercase tracking-widest">
-          <p>&copy; {new Date().getFullYear()} TAILOREDMEALPLAN. ALL RIGHTS RESERVED.</p>
+          <p>&copy; 2026 TAILOREDMEALPLAN. ALL RIGHTS RESERVED.</p>
         </div>
       </div>
     </footer>

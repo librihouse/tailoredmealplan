@@ -1,0 +1,640 @@
+================================================================================
+SAAS FEATURE BLUEPRINT - REFERENCE DOCUMENT
+================================================================================
+
+This document serves as a reference for planning and implementing features
+for the Tailored Meal Plan SaaS application. Use this document when planning
+individual phases of development.
+
+================================================================================
+EXECUTIVE SUMMARY
+================================================================================
+
+Current State: MVP Development Phase - Active Testing & Improvement
+Focus: B2C Market (Free, Individual, Family Plans)
+Pricing Model: Simplified 3-tier structure
+Status: Core features implemented, weekly plan testing in progress, preparing for launch
+Last Updated: December 29, 2025
+
+Current Pricing Structure:
+- Free: 7 credits lifetime, $0
+- Individual: 42 credits/month, $9.99/month
+- Family: 210 credits/month, $14.99/month, 5 family members
+
+================================================================================
+CURRENT WORK STATUS (As of December 29, 2025)
+================================================================================
+
+ACTIVE WORK: Weekly Meal Plan Testing & Improvement
+
+Recent Completions (Today):
+✅ Fixed weekly plan timeout issues
+   - Increased OpenAI client timeout to 5 minutes
+   - Increased Next.js API route maxDuration to 5 minutes
+   - Increased frontend API timeout to 5 minutes
+   - Added proper timeout error handling
+
+✅ Fixed weekly plan token limits
+   - Increased max_tokens from 4,000 to 10,000 for weekly plans
+   - Increased max_tokens from 8,000 to 16,000 for monthly plans
+   - Fixed JSON parsing errors caused by truncated responses
+
+✅ Implemented grocery list quantity aggregation
+   - Aggregates quantities across all days (e.g., 1 tbsp + 2 tbsp = 3 tbsp total)
+   - Converts to practical shopping units (e.g., 19 tbsp → 1 cup + 3 tbsp)
+   - Filters unnecessary items (salt to taste, water, etc.)
+   - Proper categorization for all cuisines
+   - Applies to daily, weekly, and monthly plans
+
+✅ Fixed PDF generation issues
+   - Removed empty white pages
+   - Applied theme background to all pages
+   - Professional footer formatting
+
+✅ Improved user experience
+   - Added estimated time display on generating page (2-3 min for weekly)
+   - Fixed navigation issues (reliable page transitions)
+   - Removed Share and Regenerate buttons per requirements
+
+Current Testing Focus:
+🔄 Weekly meal plan generation
+   - Verifying grocery list aggregation accuracy
+   - Testing timeout handling for 2-3 minute generations
+   - Validating unit conversions work correctly
+   - Ensuring all 7 days are properly included
+   - Checking PDF export quality
+
+Next Steps:
+⚠️ Monthly meal plan testing (after weekly is stable)
+⚠️ End-to-end testing of all plan types
+⚠️ Cross-browser and mobile device testing
+
+================================================================================
+MVP LAUNCH READINESS CHECKLIST
+================================================================================
+
+Priority: CRITICAL
+Target: Launch-ready MVP within 2-3 weeks
+
+PRE-LAUNCH REQUIREMENTS:
+
+1. Core Functionality 
+   ✅ Meal plan generation (daily, weekly, monthly)
+   - ✅ Daily meal plan: Fully working and tested
+   - 🔄 Weekly meal plan: Currently in testing and improvement phase
+     * Fixed timeout issues (increased to 5 minutes for generation)
+     * Fixed token limits (increased to 10,000 tokens for weekly plans)
+     * Fixed grocery list quantity aggregation (sums across all 7 days)
+     * Fixed navigation issues (reliable page transitions)
+     * Fixed PDF generation with proper formatting
+     * Added estimated time display (2-3 minutes) on generating page
+     * Status: Testing and fine-tuning in progress
+   - ⚠️ Monthly meal plan: Code ready, not yet tested
+     * Token limits configured (16,000 tokens)
+     * Timeout configured (5 minutes)
+     * Should work with same logic as weekly, needs testing
+   
+   ✅ User onboarding and profile management
+   ✅ Credit system and quota management
+   ✅ PDF export functionality (with theme, proper formatting)
+   ✅ Family member profiles (up to 5 for Family plan)
+   ✅ Meal plan history and management
+   ⚠️ Shareable meal plan links (backend exists, UI removed per requirements)
+
+2. Payment & Subscription System
+   ⚠️ Razorpay integration (verify end-to-end flow)
+   ⚠️ Subscription creation and management
+   ⚠️ Plan upgrade/downgrade flow
+   ⚠️ Payment failure handling
+   ⚠️ Subscription cancellation flow
+   ⚠️ Invoice generation and email delivery
+
+3. User Experience Essentials
+   ⚠️ Email notifications (welcome, meal plan ready, payment confirmations)
+   ⚠️ Error handling and user-friendly error messages
+   ⚠️ Loading states and progress indicators
+   ⚠️ Mobile responsiveness verification
+   ⚠️ Onboarding flow optimization
+
+4. Legal & Compliance
+   ⚠️ Privacy Policy page (comprehensive)
+   ⚠️ Terms of Service page
+   ⚠️ Cookie consent banner (if applicable)
+   ⚠️ GDPR compliance (data export, deletion requests)
+   ⚠️ Refund policy documentation
+
+5. Content & Documentation
+   ⚠️ FAQ page with common questions
+   ⚠️ Help/Support page
+   ⚠️ About Us page
+   ⚠️ Contact form or support email
+   ⚠️ Blog/resources section (optional but recommended)
+
+6. Technical Readiness
+   ⚠️ Production environment setup
+   ⚠️ Environment variables configuration
+   ⚠️ Database backup strategy
+   ⚠️ Error tracking (Sentry or similar)
+   ⚠️ Analytics setup (Google Analytics or similar)
+   ⚠️ Performance monitoring
+   ⚠️ SSL certificate verification
+   ⚠️ Domain configuration
+
+7. Testing & Quality Assurance
+   ⚠️ End-to-end testing of user flows
+   ⚠️ Payment flow testing (test mode)
+   ⚠️ Cross-browser testing
+   ⚠️ Mobile device testing
+   ⚠️ Load testing (if applicable)
+   ⚠️ Security audit
+
+8. Marketing & Launch Preparation
+   ⚠️ Landing page optimization
+   ⚠️ SEO meta tags and descriptions
+   ⚠️ Social media accounts setup
+   ⚠️ Launch announcement content
+   ⚠️ Press kit (if applicable)
+
+================================================================================
+PHASE 1: REVENUE CRITICAL FEATURES (MVP Launch Blockers)
+================================================================================
+
+Priority: CRITICAL
+Estimated Effort: 2-3 weeks
+Status: In Progress
+
+Features to implement:
+
+1. Email Notification Service ⚠️ REQUIRED FOR LAUNCH
+   - Welcome emails for new users
+   - Meal plan generation completion notifications
+   - Subscription renewal reminders
+   - Payment confirmation emails
+   - Payment failure notifications
+   - Technical Requirements: Email service (SendGrid, Resend, or similar)
+   - Files: server/services/email.ts, app/api/notifications/route.ts
+
+2. Billing History & Invoice Management ⚠️ REQUIRED FOR LAUNCH
+   - Display payment history in user dashboard
+   - Download invoices as PDF
+   - View subscription details
+   - Payment method information
+   - Files: app/dashboard/billing/page.tsx, server/services/invoice-generator.ts
+
+3. Payment Method Management ⚠️ REQUIRED FOR LAUNCH
+   - Add/update payment methods via Razorpay
+   - Set default payment method
+   - Remove payment methods
+   - Payment method validation
+   - Files: app/dashboard/billing/page.tsx, app/api/payment-methods/route.ts
+
+4. Subscription Upgrade/Downgrade Flow ⚠️ REQUIRED FOR LAUNCH
+   - Seamless plan changes (Free → Individual → Family)
+   - Prorated billing calculations
+   - Feature access updates
+   - Confirmation and notifications
+   - Files: app/api/subscription/upgrade/route.ts, app/api/subscription/downgrade/route.ts
+
+5. PDF Export System ✅ COMPLETED
+   - Generate and download meal plans as PDF documents
+   - Support for all subscription tiers
+   - Watermarking for free tier users
+   - Status: Implemented and working
+
+6. Database-Driven Pricing System ✅ COMPLETED
+   - Plans stored in database (free, individual, family)
+   - Dynamic pricing updates without code changes
+   - Usage monitoring and cost tracking
+   - Quality assurance with validation and retry logic
+   - Status: Implemented and working
+
+================================================================================
+PHASE 2: CUSTOMER RETENTION FEATURES (Post-Launch)
+================================================================================
+
+Priority: HIGH
+Estimated Effort: 2-3 weeks
+Status: Post-Launch
+
+Features to implement:
+
+1. Progress Tracking Dashboard
+   - Weight tracking over time
+   - Meal adherence tracking
+   - Goal progress visualization
+   - Achievement badges/milestones
+   - Database: Add progress_tracking table
+
+2. Recipe Library & Favorites
+   - Save favorite recipes from meal plans
+   - Recipe search and filtering
+   - Recipe ratings and reviews
+   - Recipe sharing
+   - Database: Add recipe_favorites table
+
+3. Settings Page Enhancements
+   - Profile management
+   - Dietary preferences updates
+   - Notification preferences
+   - Account security settings
+   - Files: app/settings/page.tsx
+
+4. AI Chat Support (Basic)
+   - In-app chat interface
+   - Common questions handling
+   - Meal plan customization help
+   - Recipe substitution suggestions
+   - Technical Requirements: OpenAI API or similar
+
+5. Meal Completion Tracking
+   - Mark meals as completed
+   - Track daily meal adherence
+   - Weekly/monthly completion stats
+   - Reminders for missed meals
+   - Database: Add meal_completion_tracking table
+
+6. Family Plan Enhancements
+   - Family member profile management UI
+   - Shared grocery list consolidation
+   - Family meal coordination features
+   - Files: app/dashboard/family/page.tsx
+
+================================================================================
+PHASE 3: GROWTH & OPTIMIZATION (Post-Launch)
+================================================================================
+
+Priority: MEDIUM
+Estimated Effort: 2-3 weeks
+Status: Post-Launch
+
+Features to implement:
+
+1. Admin Panel (Full Implementation)
+   - User management interface
+   - Subscription oversight
+   - Analytics dashboard
+   - Support ticket management
+   - Files: app/admin/* (protected routes)
+
+2. Analytics Integration
+   - User behavior tracking
+   - Conversion funnel analysis
+   - Feature usage metrics
+   - Revenue analytics
+   - Technical Requirements: Google Analytics, Mixpanel, or similar
+
+3. SEO Optimization
+   - Meta tags optimization
+   - Sitemap generation
+   - Structured data markup
+   - Content optimization
+   - Blog/resources section
+
+4. Support Ticket System
+   - Ticket creation and management
+   - Priority assignment
+   - Status tracking
+   - Response time metrics
+   - Database: Add support_tickets table
+
+5. Referral Program
+   - Referral code generation
+   - Reward tracking
+   - Referral analytics
+   - Payout management
+   - Database: Add referrals table
+
+================================================================================
+PHASE 4: TECHNICAL INFRASTRUCTURE (Ongoing)
+================================================================================
+
+Priority: HIGH
+Estimated Effort: Ongoing
+Status: Continuous Improvement
+
+Features to implement:
+
+1. Security Enhancements
+   - Two-factor authentication (optional)
+   - Rate limiting (API endpoints)
+   - Input validation (already implemented)
+   - Security headers
+   - Files: middleware.ts, server/config/security.ts
+
+2. Performance Optimization
+   - Database query optimization
+   - Caching strategies (Redis or similar)
+   - CDN integration (for static assets)
+   - Image optimization
+   - Technical Requirements: Vercel Edge Functions, Redis
+
+3. GDPR Compliance Tools
+   - Data export functionality
+   - Data deletion requests
+   - Consent management
+   - Privacy policy updates
+   - Files: app/api/user/data-export/route.ts, app/api/user/delete-account/route.ts
+
+4. Error Tracking & Monitoring
+   - Error logging system
+   - Performance monitoring
+   - Uptime tracking
+   - Alert system
+   - Technical Requirements: Sentry, LogRocket, or similar
+
+5. API Rate Limiting
+   - Per-user rate limits
+   - Tier-based limits
+   - Rate limit headers
+   - Quota management
+   - Files: middleware.ts
+
+================================================================================
+COMPLETED FEATURES (As of Latest Update)
+================================================================================
+
+✅ Core Meal Plan Generation
+   - ✅ Daily plan generation: Fully working and tested
+   - 🔄 Weekly plan generation: In active testing phase
+     * Timeout issues resolved (5-minute timeout for generation)
+     * Token limit increased to 10,000 tokens (was 4,000)
+     * Grocery list quantity aggregation implemented (sums all 7 days)
+     * Unit conversion to practical shopping units (e.g., 19 tbsp → 1 cup + 3 tbsp)
+     * Filtering of unnecessary items (salt to taste, water, etc.)
+     * Proper categorization (paneer→dairy, ghee→dairy, dal→protein)
+     * Estimated time display on generating page (2-3 minutes)
+     * Status: Testing and quality improvements ongoing
+   - ⚠️ Monthly plan generation: Code ready, awaiting testing
+   - OpenAI GPT-4o-mini integration
+   - Cultural, religious, and allergen prioritization in prompts
+   - Meal plan validation and quality assurance
+   - Retry logic for failed generations
+   - Network resilience with circuit breaker pattern
+
+✅ Database-Driven Pricing System
+   - Plans table with dynamic pricing (free, individual, family)
+   - API usage logs for cost tracking
+   - Plan usage tracking with credits system
+
+✅ User Management
+   - User authentication (Supabase Auth)
+   - User profiles and onboarding
+   - Family member profiles (up to 5 for Family plan)
+
+✅ Credit System
+   - Credit-based quota management
+   - Credit deduction on meal plan generation
+   - Monthly reset for paid plans, lifetime for Free tier
+   - Shared credits for Family plan members
+
+✅ PDF Export
+   - PDF generation using pdfkit
+   - Watermarking for free tier
+   - Cover page, daily plans, grocery lists
+   - SaaS theme with dark background and primary green accents
+   - Professional formatting with consistent spacing
+   - Proper page break handling (no empty pages)
+   - Two-line footer formatting ("TailoredMealPlan.com" + "Personalized Nutrition Plans")
+
+✅ Meal Plan Management
+   - Meal plan history
+   - Meal plan deletion
+   - Family member-specific meal plans
+   - ⚠️ Meal plan sharing: Backend exists, UI removed (Share button removed per requirements)
+   - ⚠️ Meal plan regeneration: Removed to prevent misuse (Regenerate button removed per requirements)
+
+✅ Frontend Components
+   - Pricing page (Free, Individual, Family)
+   - Credits page (information-only)
+   - Dashboard with meal plan history
+   - Family member selector
+   - Credit counter component
+
+✅ Quality Assurance
+   - Meal plan validation
+   - Retry logic for transient API failures
+   - Input sanitization
+   - Network monitoring and circuit breaker pattern
+   - Grocery list quantity aggregation and unit conversion
+   - Ingredient filtering (removes unnecessary items)
+   - Comprehensive categorization for all cuisines
+
+✅ Migration Scripts
+   - Initial plans insertion
+   - Subscription migration (Professional → Family)
+
+================================================================================
+TECHNICAL ARCHITECTURE
+================================================================================
+
+Database Schema:
+- plans table: Stores subscription plans (free, individual, family)
+- subscriptions table: User subscription records
+- plan_usage table: Tracks credits and usage per billing period
+- meal_plans table: Generated meal plan data
+- user_profiles table: User onboarding and profile data
+- family_members table: Family member profiles
+- shared_meal_plans table: Shareable meal plan links
+- api_usage_logs table: API cost tracking per generation
+
+Backend Services:
+- server/services/plans.ts: Database plan fetching
+- server/services/openai.ts: Meal plan generation with prioritized prompts
+- server/services/pdf-generator.ts: PDF document generation
+- server/services/usage-monitoring.ts: Cost tracking
+- server/services/quality-assurance.ts: Validation and retry logic
+- server/quota-supabase.ts: Credit and quota management
+- server/utils/input-sanitizer.ts: Input sanitization
+- server/services/network-monitor.ts: Network health monitoring
+- server/services/prompt-utils.ts: Prompt validation and statistics
+
+API Endpoints:
+- GET /api/plans: Public plans endpoint
+- GET /api/mealplan/quota: User quota information
+- POST /api/mealplan/generate: Generate meal plan
+- GET /api/mealplan/history: Meal plan history
+- GET /api/mealplan/[id]: Get specific meal plan
+- DELETE /api/mealplan/[id]: Delete meal plan
+- GET /api/mealplan/[id]/export-pdf: Export PDF
+- POST /api/mealplan/[id]/share: Create share link
+- GET /api/share/[token]: Public shared meal plan access
+- GET /api/admin/plans: Admin plan management
+- GET /api/admin/usage/costs: Cost analytics (admin)
+
+Frontend Components:
+- CreditCounter: Displays credit usage
+- FamilyMemberSelector: Family member selection
+- PlanCard: Meal plan display cards
+- ShareDialog: Meal plan sharing
+- UpgradeModal: Plan upgrade prompts
+
+================================================================================
+CURRENT PRICING STRUCTURE
+================================================================================
+
+Tier 1: Free
+- Credits: 7 credits lifetime (1 daily + 1 weekly + 1 monthly)
+- Price: $0
+- Target: User acquisition and product trial
+- API Cost: ~$0.007 lifetime
+- Features: Basic meal plans, watermarked PDFs
+- Status: ✅ ACTIVE
+
+Tier 2: Individual
+- Credits: 42 credits/month (30 daily + 4 weekly + 1 monthly)
+- Price: $9.99/month
+- Target: Personal health enthusiasts
+- API Cost: ~$0.042/month
+- Profit Margin: 99.6%
+- Features: Full customization, no watermarks, all features
+- Status: ✅ ACTIVE
+
+Tier 3: Family
+- Credits: 210 credits/month (30 daily + 4 weekly + 1 monthly per member × 5)
+- Price: $14.99/month
+- Target: Families with up to 5 members
+- API Cost: ~$0.16/month
+- Profit Margin: 98.9%
+- Features: Up to 5 family member profiles, shared meal plans, all Individual features
+- Status: ✅ ACTIVE
+
+Credit System:
+- Base credits: Monthly allocation from subscription (or lifetime for Free tier)
+- Credit costs: Daily = 1 credit, Weekly = 2 credits, Monthly = 4 credits
+- Credit deduction: Deducted from base credits only
+- Credit reset: Monthly reset for paid plans, lifetime for Free tier
+- Family plan: Credits shared across all 5 family members
+
+================================================================================
+QUICK WINS (Can be implemented quickly for immediate value)
+================================================================================
+
+1. Email notifications for meal plan generation ⚠️ HIGH PRIORITY
+2. Basic FAQ page with common questions ⚠️ HIGH PRIORITY
+3. Enhanced error messages and loading states ⚠️ HIGH PRIORITY
+4. Contact form or support email ⚠️ HIGH PRIORITY
+5. Privacy Policy and Terms of Service pages ⚠️ REQUIRED FOR LAUNCH
+6. Basic recipe favorites functionality (save from meal plans)
+7. Simple progress tracking (weight only)
+8. Basic analytics dashboard (user count, revenue)
+9. User onboarding improvements (tooltips, better flow)
+10. Mobile responsiveness verification and fixes
+
+================================================================================
+IMPLEMENTATION GUIDELINES
+================================================================================
+
+General best practices for implementing features:
+
+1. Always check for existing similar functionality before creating new code
+2. Follow existing code patterns and conventions
+3. Write tests for critical functionality (payment flows, meal plan generation)
+4. Update documentation as you build
+5. Consider backward compatibility
+6. Implement proper error handling with user-friendly messages
+7. Add logging for debugging (use log() helper from api-helpers)
+8. Consider performance implications (database queries, API calls)
+9. Ensure accessibility compliance (WCAG 2.1 AA)
+10. Test on multiple devices/browsers (Chrome, Safari, Firefox, mobile)
+11. Use TypeScript for type safety
+12. Follow Next.js 15 best practices
+13. Use Supabase for database operations (with proper RLS policies)
+14. Sanitize all user inputs before processing
+15. Validate all API responses before using data
+
+================================================================================
+LAUNCH READINESS PRIORITIES
+================================================================================
+
+Week 1: Critical Launch Blockers
+- Email notification system
+- Payment method management
+- Billing history page
+- Subscription upgrade/downgrade flow
+- Legal pages (Privacy Policy, Terms of Service)
+
+Week 2: User Experience & Content
+- FAQ page
+- Help/Support page
+- Contact form
+- Error handling improvements
+- Loading state enhancements
+- Mobile responsiveness fixes
+
+Week 3: Testing & Polish
+- End-to-end testing
+- Payment flow testing
+- Cross-browser testing
+- Performance optimization
+- Security audit
+- Analytics setup
+
+Post-Launch (Weeks 4+):
+- Customer retention features (Phase 2)
+- Growth features (Phase 3)
+- Technical infrastructure improvements (Phase 4)
+
+================================================================================
+MIGRATION NOTES
+================================================================================
+
+Recent Migration (Professional → Family):
+- All Professional tier users migrated to Family plan
+- Professional plan deactivated in database
+- Credit add-on system removed
+- All B2B features removed
+- Simplified to B2C-only structure
+
+Credit System:
+- Base credits: Monthly allocation from subscription (or lifetime for Free tier)
+- Credit deduction: Deducted from base credits only
+- Credit reset: Monthly reset for paid plans, lifetime for Free tier
+- Family plan: Credits shared across all 5 family members
+
+Cost Tracking:
+- All API calls logged to api_usage_logs table
+- Cost calculated per generation (input + output tokens)
+- Monthly cost reports available via admin API
+- Alerts when costs exceed 1% of revenue
+
+Quality Assurance:
+- All meal plans validated before saving
+- Retry logic for transient API failures
+- Validation checks: meals, ingredients, instructions, nutrition
+- Grocery list completeness verification
+- Cultural, religious, and allergen requirements prioritized in prompts
+- Grocery list quantity aggregation: Sums quantities across all days
+- Unit conversion: Converts to practical shopping units (e.g., 19 tbsp → 1 cup + 3 tbsp)
+- Ingredient filtering: Removes "salt to taste", plain "water", and other unnecessary items
+- Categorization: Proper categorization for all cuisines (Indian, Western, Asian, etc.)
+
+================================================================================
+TECHNICAL DEBT & FUTURE CONSIDERATIONS
+================================================================================
+
+Known Issues to Address:
+- Email notification system needs implementation
+- Payment method management UI needs development
+- Billing history page needs creation
+- Legal pages need content
+- FAQ page needs creation
+
+Current Work in Progress:
+- Weekly meal plan generation: Testing and quality improvements
+  * Verifying grocery list aggregation works correctly
+  * Testing timeout handling for longer generations
+  * Validating unit conversions and practical shopping units
+  * Ensuring all 7 days are properly included
+- Monthly meal plan: Awaiting testing after weekly plan is stable
+
+Future Enhancements:
+- Recipe library and favorites
+- Progress tracking dashboard
+- AI chat support
+- Referral program
+- Advanced analytics
+- Mobile app (future consideration)
+
+================================================================================
+END OF REFERENCE DOCUMENT
+================================================================================

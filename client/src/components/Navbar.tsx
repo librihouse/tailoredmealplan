@@ -78,13 +78,13 @@ export function Navbar() {
               ))
             ) : (
               publicLinks.map((link) => (
-                <Link 
-                  key={link.href} 
-                  href={link.href}
-                  className="transition-colors hover:text-primary"
-                >
-                  {link.label}
-                </Link>
+              <Link 
+                key={link.href} 
+                href={link.href}
+                className="transition-colors hover:text-primary"
+              >
+                {link.label}
+              </Link>
               ))
             )}
           </div>
@@ -147,16 +147,16 @@ export function Navbar() {
             </DropdownMenu>
           ) : (
             <>
-              <Link href="/login">
-                <Button variant="ghost" className="text-white hover:text-primary hover:bg-white/5 font-bold tracking-wide">
-                  LOG IN
-                </Button>
-              </Link>
-              <Link href="/signup">
-                <Button className="bg-primary hover:bg-primary/90 text-black font-bold tracking-wide px-6 py-5 rounded-none skew-x-[-10deg]">
-                  <span className="skew-x-[10deg]">START NOW</span>
-                </Button>
-              </Link>
+          <Link href="/login">
+            <Button variant="ghost" className="text-white hover:text-primary hover:bg-white/5 font-bold tracking-wide">
+              LOG IN
+            </Button>
+          </Link>
+          <Link href="/signup">
+            <Button className="bg-primary hover:bg-primary/90 text-black font-bold tracking-wide px-6 py-5 rounded-none skew-x-[-10deg]">
+              <span className="skew-x-[10deg]">START NOW</span>
+            </Button>
+          </Link>
             </>
           )}
         </div>
@@ -201,23 +201,23 @@ export function Navbar() {
           ) : (
             <>
               {publicLinks.map((link) => (
-                <Link 
-                  key={link.href} 
-                  href={link.href}
-                  className="block text-lg font-bold text-white hover:text-primary py-2 tracking-wide"
-                  onClick={() => setIsOpen(false)}
-                >
-                  {link.label}
-                </Link>
-              ))}
-              <div className="pt-4 border-t border-white/10 flex flex-col gap-3">
-                <Link href="/login" onClick={() => setIsOpen(false)}>
-                  <Button variant="outline" className="w-full justify-center border-white/20 text-white hover:bg-white/10 font-bold bg-transparent">LOG IN</Button>
-                </Link>
-                <Link href="/onboarding" onClick={() => setIsOpen(false)}>
-                  <Button className="w-full bg-primary text-black font-bold">GET PLAN</Button>
-                </Link>
-              </div>
+            <Link 
+              key={link.href} 
+              href={link.href}
+              className="block text-lg font-bold text-white hover:text-primary py-2 tracking-wide"
+              onClick={() => setIsOpen(false)}
+            >
+              {link.label}
+            </Link>
+          ))}
+          <div className="pt-4 border-t border-white/10 flex flex-col gap-3">
+            <Link href="/login" onClick={() => setIsOpen(false)}>
+              <Button variant="outline" className="w-full justify-center border-white/20 text-white hover:bg-white/10 font-bold bg-transparent">LOG IN</Button>
+            </Link>
+            <Link href="/onboarding" onClick={() => setIsOpen(false)}>
+              <Button className="w-full bg-primary text-black font-bold">GET PLAN</Button>
+            </Link>
+          </div>
             </>
           )}
         </div>

@@ -17,7 +17,6 @@ import { Spinner } from "@/components/ui/spinner";
 
 export default function Pricing() {
   const [isAnnual, setIsAnnual] = useState(false);
-  const [view, setView] = useState<"b2c" | "b2b">("b2c");
   const { isAuthenticated, user } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -30,10 +29,6 @@ export default function Pricing() {
       "Free Tier": "free",
       "Individual": "individual",
       "Family": "family",
-      "Starter": "starter",
-      "Growth": "growth",
-      "Professional": "professional",
-      "Enterprise": "enterprise",
     };
     return planMap[planName] || planName.toLowerCase().replace(/\s+/g, "_");
   };
@@ -41,9 +36,8 @@ export default function Pricing() {
   const handleSubscribe = async (plan: any) => {
     // Check if user is logged in
     if (!isAuthenticated) {
-      // Determine user type from plan
-      const isB2BPlan = ["Starter", "Growth", "Professional", "Enterprise"].includes(plan.name);
-      const userType = isB2BPlan ? "professional" : "individual";
+      // All plans are B2C now
+      const userType = "individual";
       
       toast({
         title: "Login Required",
@@ -57,7 +51,13 @@ export default function Pricing() {
     // Skip payment for free tier
     if (plan.name === "Free Tier") {
       // Free tier is always individual
-      router.push("/auth?userType=individual&redirect=/onboarding");
+      if (!isAuthenticated) {
+        // Not logged in, redirect to auth with onboarding redirect
+        router.push("/auth?userType=individual&redirect=/onboarding");
+      } else {
+        // Already logged in, just redirect to onboarding (or dashboard if completed)
+        router.push("/onboarding");
+      }
       return;
     }
 
@@ -134,14 +134,36 @@ export default function Pricing() {
     }
   };
 
-  const b2cPlans = [
+  interface MealPlanOptions {
+    daily: { count: number; credits: number };
+    weekly: { count: number; credits: number };
+    monthly: { count: number; credits: number };
+  }
+
+  interface PlanCard {
+    name: string;
+    price: string;
+    period: string;
+    description: string;
+    mealPlanOptions: MealPlanOptions;
+    features: string[];
+    limitations: string[];
+    cta: string;
+    popular: boolean;
+  }
+
+  const plans: PlanCard[] = [
     {
       name: "Free Tier",
       price: "$0",
       period: "forever",
       description: "Perfect for trying out personalized nutrition.",
+      mealPlanOptions: {
+        daily: { count: 1, credits: 1 },
+        weekly: { count: 1, credits: 2 },
+        monthly: { count: 1, credits: 4 },
+      },
       features: [
-        "1 Meal Plan (Lifetime)",
         "Basic Questionnaire",
         "Recipes with Ingredients",
         "Nutritional Breakdown",
@@ -157,11 +179,15 @@ export default function Pricing() {
     },
     {
       name: "Individual",
-      price: isAnnual ? "$7.40" : "$9",
+      price: isAnnual ? "$7.40" : "$9.99",
       period: "per month",
-      description: "For dedicated health enthusiasts.",
+      description: "Comprehensive nutrition planning for dedicated health enthusiasts.",
+      mealPlanOptions: {
+        daily: { count: 30, credits: 1 },
+        weekly: { count: 4, credits: 2 },
+        monthly: { count: 1, credits: 4 },
+      },
       features: [
-        "50 Meal Plans / Month",
         "Full Dietary Customization",
         "Religious & Medical Diets",
         "Smart Grocery Lists",
@@ -175,106 +201,30 @@ export default function Pricing() {
     },
     {
       name: "Family",
-      price: isAnnual ? "$15.75" : "$19",
+      price: isAnnual ? "$12.99" : "$14.99",
       period: "per month",
-      description: "Healthy habits for the whole house.",
+      description: "Perfect for families with up to 5 members. Each member gets 30 daily plans, 4 weekly plans, and 1 monthly plan per month.",
+      mealPlanOptions: {
+        daily: { count: 150, credits: 1 }, // 30 per member × 5
+        weekly: { count: 20, credits: 2 }, // 4 per member × 5
+        monthly: { count: 5, credits: 4 }, // 1 per member × 5
+      },
       features: [
-        "Everything in Individual",
         "Up to 5 Family Members",
-        "Family Meal Coordination",
-        "Shared Grocery Lists",
-        "Family Dashboard",
-        "Priority Support"
+        "Individual Profiles & Goals",
+        "Shared Meal Plans",
+        "Full Dietary Customization",
+        "Religious & Medical Diets",
+        "Smart Grocery Lists",
+        "Progress Tracking",
+        "AI Chat Support",
+        "No Watermarks"
       ],
       limitations: [],
       cta: "Choose Family",
       popular: false
-    }
+    },
   ];
-
-  const b2bPlans = [
-    {
-      name: "Starter",
-      price: isAnnual ? "$24" : "$29",
-      period: "per month",
-      description: "For solo nutritionists and coaches.",
-      features: [
-        "Up to 50 Clients",
-        "80 Weekly Plans / Month",
-        "10 Monthly Plans / Month",
-        "1 Team Seat",
-        "Basic White-labeling",
-        "PDF Export with Logo",
-        "Client Dashboard",
-        "Email Support"
-      ],
-      limitations: [],
-      cta: "Start 14-Day Trial",
-      popular: false
-    },
-    {
-      name: "Growth",
-      price: isAnnual ? "$39" : "$49",
-      period: "per month",
-      description: "For expanding practices.",
-      features: [
-        "Up to 150 Clients",
-        "200 Weekly Plans / Month",
-        "25 Monthly Plans / Month",
-        "2 Team Seats",
-        "Full White-labeling",
-        "Custom Branding",
-        "Client Dashboard",
-        "Priority Email Support"
-      ],
-      limitations: [],
-      cta: "Start 14-Day Trial",
-      popular: false
-    },
-    {
-      name: "Professional",
-      price: isAnnual ? "$79" : "$99",
-      period: "per month",
-      description: "For growing clinics and gyms.",
-      features: [
-        "Up to 400 Clients",
-        "500 Weekly Plans / Month",
-        "60 Monthly Plans / Month",
-        "5 Team Seats",
-        "Full White-labeling",
-        "Custom Branding",
-        "Bulk Generation",
-        "API Access",
-        "Priority Support"
-      ],
-      limitations: [],
-      cta: "Start 14-Day Trial",
-      popular: true
-    },
-    {
-      name: "Enterprise",
-      price: isAnnual ? "$159" : "$199",
-      period: "per month",
-      description: "For large organizations.",
-      features: [
-        "Up to 1,500 Clients",
-        "1,500 Weekly Plans / Month",
-        "150 Monthly Plans / Month",
-        "Unlimited Team Seats",
-        "Complete White-labeling",
-        "Custom Domain",
-        "Dedicated Account Manager",
-        "SLA Guarantee",
-        "Advanced Analytics",
-        "API Access"
-      ],
-      limitations: [],
-      cta: "Contact Sales",
-      popular: false
-    }
-  ];
-
-  const plans = view === "b2c" ? b2cPlans : b2bPlans;
 
   const fadeInUp = {
     hidden: { opacity: 0, y: 60 },
@@ -299,28 +249,6 @@ export default function Pricing() {
               Choose the plan that fits your needs. Cancel anytime.
             </p>
 
-            {/* View Toggle */}
-            <div className="inline-flex bg-gray-900/50 border border-white/10 p-1 rounded-lg mb-8">
-              <button 
-                onClick={() => setView("b2c")}
-                className={cn(
-                  "px-6 py-2 rounded-md text-sm font-medium transition-all",
-                  view === "b2c" ? "bg-primary text-black shadow-lg" : "text-gray-400 hover:text-white"
-                )}
-              >
-                For Individuals & Families
-              </button>
-              <button 
-                onClick={() => setView("b2b")}
-                className={cn(
-                  "px-6 py-2 rounded-md text-sm font-medium transition-all",
-                  view === "b2b" ? "bg-primary text-black shadow-lg" : "text-gray-400 hover:text-white"
-                )}
-              >
-                For Professionals
-              </button>
-            </div>
-
             {/* Annual Toggle */}
             <div className="flex items-center justify-center gap-4">
               <span className={cn("text-sm font-medium", !isAnnual ? "text-white" : "text-gray-400")}>Monthly</span>
@@ -344,10 +272,7 @@ export default function Pricing() {
             </div>
           </motion.div>
 
-          <div className={cn(
-            "grid gap-8",
-            view === "b2c" ? "md:grid-cols-3" : "md:grid-cols-2 lg:grid-cols-4"
-          )}>
+          <div className="grid gap-8 md:grid-cols-3 max-w-6xl mx-auto">
             {plans.map((plan, index) => (
               <motion.div
                 key={index}
@@ -376,6 +301,51 @@ export default function Pricing() {
                     <div className="mb-6">
                       <span className="text-4xl font-bold font-mono text-white">{plan.price}</span>
                       <span className="text-gray-400 ml-2">{plan.period}</span>
+                    </div>
+
+                    {/* What You Can Create Section */}
+                    <div className="mb-6 pb-6 border-b border-white/10">
+                      <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">
+                        What You Can Create
+                      </h3>
+                      <div className="grid grid-cols-3 gap-3">
+                        {/* Daily Plans */}
+                        <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-500/30 rounded-lg p-3 text-center">
+                          <div className="text-2xl mb-1">📅</div>
+                          <div className="text-xl font-bold text-white mb-1">
+                            {plan.mealPlanOptions.daily.count}
+                          </div>
+                          <div className="text-xs text-gray-300 mb-1">Daily Plans</div>
+                          <div className="text-xs text-primary font-medium">
+                            {plan.mealPlanOptions.daily.credits} credit{plan.mealPlanOptions.daily.credits > 1 ? 's' : ''}
+                          </div>
+                        </div>
+                        {/* Weekly Plans */}
+                        <div className="bg-gradient-to-br from-green-500/20 to-green-600/10 border border-green-500/30 rounded-lg p-3 text-center">
+                          <div className="text-2xl mb-1">📆</div>
+                          <div className="text-xl font-bold text-white mb-1">
+                            {plan.mealPlanOptions.weekly.count}
+                          </div>
+                          <div className="text-xs text-gray-300 mb-1">Weekly Plans</div>
+                          <div className="text-xs text-primary font-medium">
+                            {plan.mealPlanOptions.weekly.credits} credit{plan.mealPlanOptions.weekly.credits > 1 ? 's' : ''}
+                          </div>
+                        </div>
+                        {/* Monthly Plans */}
+                        <div className="bg-gradient-to-br from-purple-500/20 to-purple-600/10 border border-purple-500/30 rounded-lg p-3 text-center">
+                          <div className="text-2xl mb-1">📅</div>
+                          <div className="text-xl font-bold text-white mb-1">
+                            {plan.mealPlanOptions.monthly.count}
+                          </div>
+                          <div className="text-xs text-gray-300 mb-1">Monthly Plans</div>
+                          <div className="text-xs text-primary font-medium">
+                            {plan.mealPlanOptions.monthly.credits} credit{plan.mealPlanOptions.monthly.credits > 1 ? 's' : ''}
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-400 text-center mt-3">
+                        Mix and match any combination
+                      </p>
                     </div>
 
                     <ul className="space-y-3 text-sm">
@@ -419,6 +389,7 @@ export default function Pricing() {
             ))}
           </div>
 
+
           <motion.div 
             initial="hidden"
             whileInView="visible"
@@ -436,18 +407,10 @@ export default function Pricing() {
                  <h4 className="font-bold mb-2 flex items-center gap-2 text-white"><HelpCircle className="h-4 w-4 text-primary"/> Do you offer refunds?</h4>
                  <p className="text-gray-400 text-sm">We offer a 7-day money-back guarantee for all paid plans if you're not satisfied.</p>
                </div>
-               {view === "b2b" && (
-                 <div className="bg-gray-900/50 border border-white/10 p-6 rounded-lg backdrop-blur">
-                   <h4 className="font-bold mb-2 flex items-center gap-2 text-white"><HelpCircle className="h-4 w-4 text-primary"/> What's the difference between weekly and monthly plans?</h4>
-                   <p className="text-gray-400 text-sm">Weekly plans cover 1-7 day meal plans, perfect for regular check-ins. Monthly plans are comprehensive 30-day plans with full grocery lists.</p>
-                 </div>
-               )}
-               {view === "b2b" && (
-                 <div className="bg-gray-900/50 border border-white/10 p-6 rounded-lg backdrop-blur">
-                   <h4 className="font-bold mb-2 flex items-center gap-2 text-white"><HelpCircle className="h-4 w-4 text-primary"/> Can I upgrade mid-cycle?</h4>
-                   <p className="text-gray-400 text-sm">Yes! When you upgrade, you'll get immediate access to higher limits and we'll prorate the cost.</p>
-                 </div>
-               )}
+               <div className="bg-gray-900/50 border border-white/10 p-6 rounded-lg backdrop-blur">
+                 <h4 className="font-bold mb-2 flex items-center gap-2 text-white"><HelpCircle className="h-4 w-4 text-primary"/> Can I mix different plan types?</h4>
+                 <p className="text-gray-400 text-sm">Yes! You can use your monthly allocation however you want - mix daily, weekly, and monthly plans as needed. Monthly plans count as 4x weekly plans.</p>
+               </div>
              </div>
           </motion.div>
         </div>

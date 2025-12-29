@@ -3,13 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Menu, X, User, LogOut, Settings, LayoutDashboard, Users, BarChart3, FileText } from "lucide-react";
+import { Menu, X, User, LogOut, Settings, LayoutDashboard, Users, BarChart3, FileText, Coins } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { getSubscriptionStatus } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
-import { isB2BPlan } from "@shared/plans";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,24 +31,28 @@ export function Navbar() {
   });
 
   const planId = subscriptionData?.subscription?.planId || "free";
-  const isProfessional = isAuthenticated && isB2BPlan(planId as any);
+  // No B2B plans in simplified structure
+  const isProfessional = false;
+  const hasPaidPlan = isAuthenticated && planId !== "free";
 
   const publicLinks = [
     { href: "/how-it-works", label: "HOW IT WORKS" },
     { href: "/features", label: "FEATURES" },
     { href: "/pricing", label: "PRICING" },
-    { href: "/professionals", label: "PROFESSIONAL" },
+    { href: "/credits", label: "CREDITS" },
   ];
 
   // Different nav links for professionals vs individuals
+  // All authenticated users see pricing link alongside credits
   const individualLinks = [
     { href: "/dashboard", label: "DASHBOARD" },
-    { href: "/meal-plans", label: "MY PLANS" },
+    { href: "/credits", label: "CREDITS" },
     { href: "/pricing", label: "PRICING" },
   ];
 
   const professionalLinks = [
     { href: "/dashboard", label: "DASHBOARD" },
+    { href: "/credits", label: "CREDITS" },
     { href: "/pricing", label: "PRICING" },
   ];
 
@@ -113,25 +116,12 @@ export function Navbar() {
                     Dashboard
                   </Link>
                 </DropdownMenuItem>
-                {isProfessional ? (
-                  <>
-                    <DropdownMenuItem disabled className="cursor-not-allowed opacity-50">
-                      <Users className="mr-2 h-4 w-4" />
-                      Clients (Coming Soon)
-                    </DropdownMenuItem>
-                    <DropdownMenuItem disabled className="cursor-not-allowed opacity-50">
-                      <BarChart3 className="mr-2 h-4 w-4" />
-                      Analytics (Coming Soon)
-                    </DropdownMenuItem>
-                  </>
-                ) : (
-                  <DropdownMenuItem asChild>
-                    <Link href="/meal-plans" className="cursor-pointer flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
-                      My Plans
-                    </Link>
-                  </DropdownMenuItem>
-                )}
+                <DropdownMenuItem asChild>
+                  <Link href="/credits" className="cursor-pointer flex items-center gap-2">
+                    <Coins className="h-4 w-4" />
+                    Credits
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link href="/settings" className="cursor-pointer flex items-center gap-2">
                     <Settings className="h-4 w-4" />

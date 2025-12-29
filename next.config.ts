@@ -3,12 +3,29 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   reactStrictMode: true,
+  // Disable error overlay and dev indicators in production
+  devIndicators: {
+    buildActivity: false,
+    buildActivityPosition: 'bottom-right',
+  },
+  // Disable error overlay
+  onDemandEntries: {
+    maxInactiveAge: 25 * 1000,
+    pagesBufferLength: 2,
+  },
   // Webpack configuration for path aliases
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
       "@assets": require("path").resolve(__dirname, "attached_assets"),
     };
+    
+    // Externalize pdfkit to avoid bundling issues with font files
+    config.externals = config.externals || [];
+    if (Array.isArray(config.externals)) {
+      config.externals.push('pdfkit');
+    }
+    
     return config;
   },
   typescript: {

@@ -134,6 +134,8 @@ export default function Onboarding() {
     }
     
     setSaving(true);
+    let profileSaved = false;
+    
     try {
       // Refresh session before saving to ensure we have a valid token
       const { data: sessionData, error: sessionError } = await supabase.auth.refreshSession();
@@ -142,81 +144,203 @@ export default function Onboarding() {
       }
 
       // Save basic profile data including gender and transition info
-      await saveUserProfile({
-        onboardingCompleted: true,
-        gender: formData.gender === "other" ? formData.genderSpecify : formData.gender,
-        // Store transition-related info in a JSON field or as additional metadata
-        transitionInfo: formData.gender === "other" ? {
-          genderSpecify: formData.genderSpecify,
-          isTransitioning: formData.isTransitioning,
-          transitionMedications: formData.transitionMedications,
-          additionalHealthInfo: formData.additionalHealthInfo,
-        } : undefined,
-      });
-
-      // Update user metadata with basic info
-      if (user) {
-        const { error: updateError } = await supabase.auth.updateUser({
-          data: {
-            first_name: formData.firstName,
-            last_name: formData.lastName,
-            phone: formData.phone,
-            gender: formData.gender === "other" ? formData.genderSpecify : formData.gender,
-            timezone: formData.timezone,
-            language: formData.language,
-            currency: formData.currency,
-            // Store transition info in metadata
-            ...(formData.gender === "other" && {
-              gender_specify: formData.genderSpecify,
-              is_transitioning: formData.isTransitioning,
-              transition_medications: formData.transitionMedications,
-              additional_health_info: formData.additionalHealthInfo,
-            }),
-          }
+      // This is the critical operation - if this fails, we should show error
+      try {
+        await saveUserProfile({
+          onboardingCompleted: true,
+          gender: formData.gender === "other" ? formData.genderSpecify : formData.gender,
+          // Store transition-related info in a JSON field or as additional metadata
+          transitionInfo: formData.gender === "other" ? {
+            genderSpecify: formData.genderSpecify,
+            isTransitioning: formData.isTransitioning,
+            transitionMedications: formData.transitionMedications,
+            additionalHealthInfo: formData.additionalHealthInfo,
+          } : undefined,
         });
+        profileSaved = true;
+      } catch (profileError: any) {
+        console.error("[ONBOARDING] Error saving user profile:", profileError);
+        
+        // Extract detailed error message from API response
+        let errorMessage = "Failed to save your profile";
+        let errorDetails = "";
+        
+        if (profileError.message) {
+          errorMessage = profileError.message;
+          
+          // Try to extract more specific error from the message
+          if (errorMessage.includes(":")) {
+            const parts = errorMessage.split(":");
+            if (parts.length > 1) {
+              errorDetails = parts.slice(1).join(":").trim();
+              errorMessage = parts[0].trim();
+            }
+          }
+        }
+        
+        // Log full error for debugging
+        console.error("[ONBOARDING] Full error details:", {
+          message: profileError.message,
+          stack: profileError.stack,
+          name: profileError.name,
+        });
+        
+        // Re-throw with more context
+        const finalMessage = errorDetails 
+          ? `${errorMessage}: ${errorDetails}`
+          : errorMessage;
+        throw new Error(finalMessage);
+      }
 
-        if (updateError) {
-          console.error("Error updating user metadata:", updateError);
-          // Don't fail the whole process if metadata update fails
+      // Update user metadata with basic info (optional - don't fail if this fails)
+      if (user) {
+        try {
+          const { error: updateError } = await supabase.auth.updateUser({
+            data: {
+              first_name: formData.firstName,
+              last_name: formData.lastName,
+              phone: formData.phone,
+              gender: formData.gender === "other" ? formData.genderSpecify : formData.gender,
+              timezone: formData.timezone,
+              language: formData.language,
+              currency: formData.currency,
+              // Store transition info in metadata
+              ...(formData.gender === "other" && {
+                gender_specify: formData.genderSpecify,
+                is_transitioning: formData.isTransitioning,
+                transition_medications: formData.transitionMedications,
+                additional_health_info: formData.additionalHealthInfo,
+              }),
+            }
+          });
+
+          if (updateError) {
+            console.warn("Warning: Could not update user metadata (non-critical):", updateError);
+            // Don't fail the whole process - profile is already saved
+          }
+        } catch (metadataError) {
+          console.warn("Warning: Error updating user metadata (non-critical):", metadataError);
+          // Continue anyway - profile is already saved
         }
       }
 
-      toast({
-        title: "Welcome!",
-        description: "Your profile has been set up. You can now generate your first meal plan.",
-      });
-
-      // Clear saved progress from localStorage
-      if (user) {
-        localStorage.removeItem(`individual-onboarding-${user.id}`);
-      }
-
-      // Redirect to dashboard
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 1000);
-    } catch (error: any) {
-      console.error("Error saving profile:", error);
-      const errorMessage = error.message || "Failed to save profile. Please try again.";
-      
-      // If it's an auth error, suggest signing in again
-      if (errorMessage.includes("session") || errorMessage.includes("expired") || errorMessage.includes("Unauthorized")) {
+      // Only show success and redirect if profile was saved successfully
+      if (profileSaved) {
+        // Double-check that profile was actually saved by verifying the response
+        // The saveUserProfile function should have thrown an error if it failed
+        console.log("[ONBOARDING] Profile saved successfully, preparing redirect...");
+        
         toast({
-          title: "Session Expired",
-          description: "Your session has expired. Please sign in again to continue.",
+          title: "Welcome!",
+          description: "Your profile has been set up. You can now generate your first meal plan.",
+        });
+
+        // Clear saved progress from localStorage
+        if (user) {
+          localStorage.removeItem(`individual-onboarding-${user.id}`);
+        }
+
+        // Redirect to dashboard after a short delay to ensure toast is visible
+        setTimeout(() => {
+          console.log("[ONBOARDING] Redirecting to dashboard...");
+          router.push("/dashboard");
+        }, 1000);
+      } else {
+        // Profile was not saved - this should not happen if error handling is correct
+        console.error("[ONBOARDING] Profile save flag is false but no error was thrown");
+        toast({
+          title: "Error",
+          description: "Profile save status is unclear. Please try again or contact support.",
           variant: "destructive",
         });
-        // Redirect to auth page after a delay
+        setSaving(false);
+      }
+    } catch (error: any) {
+      console.error("[ONBOARDING] Error in onboarding completion:", error);
+      console.error("[ONBOARDING] Error details:", {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+      });
+      
+      // Extract error message with better context
+      let errorMessage = error.message || "Failed to save profile. Please try again.";
+      let errorTitle = "Error";
+      let shouldRedirect = false;
+      
+      // Clean up error message - remove technical prefixes
+      errorMessage = errorMessage
+        .replace(/^Unable to save your profile:\s*/i, "")
+        .replace(/^Failed to save your profile:\s*/i, "")
+        .trim();
+      
+      // Categorize errors for better user experience
+      const lowerMessage = errorMessage.toLowerCase();
+      
+      if (lowerMessage.includes("session") || 
+          lowerMessage.includes("expired") || 
+          lowerMessage.includes("unauthorized") || 
+          lowerMessage.includes("not authenticated") ||
+          lowerMessage.includes("invalid user authentication")) {
+        errorTitle = "Session Expired";
+        errorMessage = "Your session has expired. Please sign in again to continue.";
+        shouldRedirect = true;
+      } else if (lowerMessage.includes("network") || 
+                 lowerMessage.includes("fetch") || 
+                 lowerMessage.includes("failed to fetch") ||
+                 lowerMessage.includes("connection")) {
+        errorTitle = "Connection Error";
+        errorMessage = "Unable to connect to the server. Please check your internet connection and try again.";
+      } else if (lowerMessage.includes("500") || 
+                 lowerMessage.includes("server error") ||
+                 lowerMessage.includes("database") ||
+                 lowerMessage.includes("database service is temporarily unavailable") ||
+                 lowerMessage.includes("database not configured")) {
+        errorTitle = "Server Error";
+        errorMessage = "We're experiencing technical difficulties. Please try again in a few moments. If the problem persists, contact support.";
+      } else if (lowerMessage.includes("400") || 
+                 lowerMessage.includes("bad request") ||
+                 lowerMessage.includes("invalid request data") ||
+                 lowerMessage.includes("required fields are missing") ||
+                 lowerMessage.includes("invalid data")) {
+        errorTitle = "Invalid Data";
+        errorMessage = "There was an issue with the information provided. Please check your inputs and try again.";
+      } else if (lowerMessage.includes("409") || 
+                 lowerMessage.includes("already exists") ||
+                 lowerMessage.includes("profile already exists")) {
+        errorTitle = "Profile Already Exists";
+        errorMessage = "Your profile has already been created. Redirecting to dashboard...";
+        // If profile already exists, we should still redirect to dashboard
+        setTimeout(() => {
+          router.push("/dashboard");
+        }, 1500);
+        setSaving(false);
+        return;
+      } else if (lowerMessage.includes("403") || 
+                 lowerMessage.includes("permission denied")) {
+        errorTitle = "Access Denied";
+        errorMessage = "You don't have permission to perform this action. Please contact support if this persists.";
+      } else if (lowerMessage.includes("invalid user reference")) {
+        errorTitle = "Authentication Error";
+        errorMessage = "There was an issue with your account. Please sign in again.";
+        shouldRedirect = true;
+      }
+      
+      // Show error toast
+      toast({
+        title: errorTitle,
+        description: errorMessage,
+        variant: "destructive",
+      });
+      
+      // Redirect if needed
+      if (shouldRedirect) {
         setTimeout(() => {
           router.push("/auth?redirect=/onboarding");
         }, 2000);
-      } else {
-        toast({
-          title: "Error",
-          description: errorMessage,
-          variant: "destructive",
-        });
       }
+      
+      // Always reset saving state
       setSaving(false);
     }
   };
@@ -491,13 +615,61 @@ export default function Onboarding() {
 
                   <div className="space-y-2">
                     <Label className="text-gray-300 uppercase font-bold">Timezone</Label>
-                    <Input 
-                      type="text" 
+                    <select
+                      className="w-full bg-black/40 border border-white/20 h-12 text-lg focus:border-primary text-white px-4 focus:outline-none focus:ring-2 focus:ring-primary"
                       value={formData.timezone}
-                      className="bg-black/40 border-white/20 h-12 text-lg focus:border-primary"
-                      readOnly
-                    />
-                    <p className="text-sm text-gray-400">Detected automatically. You can change this in settings later.</p>
+                      onChange={(e) => setFormData({...formData, timezone: e.target.value})}
+                    >
+                      <optgroup label="Americas">
+                        <option value="America/New_York">Eastern Time (US & Canada)</option>
+                        <option value="America/Chicago">Central Time (US & Canada)</option>
+                        <option value="America/Denver">Mountain Time (US & Canada)</option>
+                        <option value="America/Los_Angeles">Pacific Time (US & Canada)</option>
+                        <option value="America/Phoenix">Arizona</option>
+                        <option value="America/Anchorage">Alaska</option>
+                        <option value="America/Toronto">Toronto, Canada</option>
+                        <option value="America/Vancouver">Vancouver, Canada</option>
+                        <option value="America/Mexico_City">Mexico City</option>
+                        <option value="America/Sao_Paulo">São Paulo, Brazil</option>
+                        <option value="America/Buenos_Aires">Buenos Aires, Argentina</option>
+                      </optgroup>
+                      <optgroup label="Europe">
+                        <option value="Europe/London">London, UK</option>
+                        <option value="Europe/Paris">Paris, France</option>
+                        <option value="Europe/Berlin">Berlin, Germany</option>
+                        <option value="Europe/Rome">Rome, Italy</option>
+                        <option value="Europe/Madrid">Madrid, Spain</option>
+                        <option value="Europe/Amsterdam">Amsterdam, Netherlands</option>
+                        <option value="Europe/Stockholm">Stockholm, Sweden</option>
+                        <option value="Europe/Moscow">Moscow, Russia</option>
+                        <option value="Europe/Istanbul">Istanbul, Turkey</option>
+                      </optgroup>
+                      <optgroup label="Asia">
+                        <option value="Asia/Kolkata">Mumbai, Delhi, Kolkata (IST)</option>
+                        <option value="Asia/Dubai">Dubai, UAE</option>
+                        <option value="Asia/Singapore">Singapore</option>
+                        <option value="Asia/Hong_Kong">Hong Kong</option>
+                        <option value="Asia/Shanghai">Shanghai, Beijing</option>
+                        <option value="Asia/Tokyo">Tokyo, Japan</option>
+                        <option value="Asia/Seoul">Seoul, South Korea</option>
+                        <option value="Asia/Bangkok">Bangkok, Thailand</option>
+                        <option value="Asia/Jakarta">Jakarta, Indonesia</option>
+                        <option value="Asia/Manila">Manila, Philippines</option>
+                      </optgroup>
+                      <optgroup label="Australia & Oceania">
+                        <option value="Australia/Sydney">Sydney, Australia</option>
+                        <option value="Australia/Melbourne">Melbourne, Australia</option>
+                        <option value="Australia/Perth">Perth, Australia</option>
+                        <option value="Pacific/Auckland">Auckland, New Zealand</option>
+                      </optgroup>
+                      <optgroup label="Africa & Middle East">
+                        <option value="Africa/Cairo">Cairo, Egypt</option>
+                        <option value="Africa/Johannesburg">Johannesburg, South Africa</option>
+                        <option value="Asia/Riyadh">Riyadh, Saudi Arabia</option>
+                        <option value="Asia/Tehran">Tehran, Iran</option>
+                      </optgroup>
+                    </select>
+                    <p className="text-sm text-gray-400">Your timezone is auto-detected. You can change it here or in settings later.</p>
                   </div>
                 </div>
               </div>

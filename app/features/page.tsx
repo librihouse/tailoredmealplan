@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Leaf, 
   Heart, 
-  Globe, 
   ShieldCheck, 
   Dumbbell,
   Activity,
@@ -104,9 +103,8 @@ export default function Features() {
           {/* Smart Features */}
           <div className="mb-20">
             <h2 className="font-heading text-4xl font-bold mb-12 border-l-4 border-primary pl-6 uppercase">AI Intelligence</h2>
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-2 gap-6">
               {[
-                { icon: Globe, title: "Global Language", desc: "Plans available in 20+ languages including English, Spanish, French, Hindi." },
                 { icon: ChefHat, title: "Zero Waste Logic", desc: "Smartly plans meals to use up leftovers and reduce grocery waste." },
                 { icon: Wallet, title: "Cost Optimization", desc: "Set your weekly grocery budget and we'll find high-quality recipes that fit." }
               ].map((feature, i) => (

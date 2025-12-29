@@ -13,15 +13,24 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error(error);
+    // Only log errors in development
+    if (process.env.NODE_ENV === 'development') {
+      console.error(error);
+    }
   }, [error]);
+
+  // Don't show error details in production
+  const isProduction = process.env.NODE_ENV === 'production';
+  const errorMessage = isProduction 
+    ? "An unexpected error occurred. Please try again." 
+    : (error.message || "An unexpected error occurred");
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-black text-white">
       <div className="text-center space-y-6 p-8 max-w-md">
         <AlertCircle className="h-16 w-16 text-red-500 mx-auto" />
         <h2 className="font-heading text-3xl font-bold uppercase">Something went wrong!</h2>
-        <p className="text-gray-400">{error.message || "An unexpected error occurred"}</p>
+        <p className="text-gray-400">{errorMessage}</p>
         <div className="flex gap-4 justify-center">
           <Button onClick={reset} variant="outline">
             Try again

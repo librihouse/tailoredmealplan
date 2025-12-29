@@ -183,6 +183,33 @@ export default function Home() {
          </div>
       </section>
 
+      {/* Credits Information Section */}
+      <section className="bg-black text-white py-24 md:py-32">
+        <div className="container max-w-screen-2xl px-4 md:px-8">
+          <motion.div 
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={fadeInUp}
+            className="text-center max-w-3xl mx-auto"
+          >
+            <span className="text-primary font-bold tracking-widest uppercase mb-4 block">Transparent Pricing</span>
+            <h2 className="font-heading text-5xl md:text-7xl font-bold uppercase mb-6 text-white">
+              Simple Credit System
+            </h2>
+            <p className="text-xl text-gray-400 mb-12">
+              Understand exactly how our credit system works and what you can create with each plan tier.
+            </p>
+            <Link href="/credits">
+              <Button variant="outline" className="border-primary/30 text-primary hover:bg-primary hover:text-black h-14 px-8 font-bold tracking-wide rounded-none uppercase">
+                Learn About Credits
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
+          </motion.div>
+        </div>
+      </section>
+
       {/* CTA */}
       <section className="bg-primary py-32 text-center">
         <div className="container px-4">

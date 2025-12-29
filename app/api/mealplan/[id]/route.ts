@@ -1,15 +1,24 @@
 /**
- * GET /api/mealplan/[id] - Get a specific meal plan by ID
- * DELETE /api/mealplan/[id] - Delete a meal plan
+ * Meal Plan Operations API Routes
+ * GET and DELETE operations for individual meal plans
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/server/supabase";
+import { supabaseAdmin, supabase } from "@/server/supabase";
 import { authenticateRequest, log } from "@/lib/api-helpers";
+import { generateMealPlan, type UserProfile } from "@/server/services/openai";
+import { checkQuota, incrementUsage, getCreditsRequired, type PlanType } from "@/server/quota-supabase";
 
+// Use admin client if available, otherwise fallback to regular client
+const getSupabaseClient = () => supabaseAdmin || supabase;
+
+/**
+ * GET /api/mealplan/[id]
+ * Get a single meal plan by ID
+ */
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
     const authResult = await authenticateRequest(request);
@@ -18,46 +27,35 @@ export async function GET(
     }
     const { userId } = authResult;
 
-    const { id: planId } = await params;
-
-    if (!supabaseAdmin) {
+    const dbClient = getSupabaseClient();
+    if (!dbClient) {
       return NextResponse.json(
         { error: "Database not configured" },
         { status: 500 }
       );
     }
 
-    const { data, error } = await supabaseAdmin
+    const planId = params.id;
+
+    const { data: plan, error } = await dbClient
       .from("meal_plans")
       .select("*")
       .eq("id", planId)
       .eq("user_id", userId)
       .single();
 
-    if (error) {
-      if (error.code === "PGRST116") {
-        return NextResponse.json(
-          { error: "Meal plan not found" },
-          { status: 404 }
-        );
-      }
-      log(`Error fetching meal plan: ${error.message}`, "mealplan");
-      return NextResponse.json(
-        { error: "Failed to fetch meal plan" },
-        { status: 500 }
-      );
-    }
-
-    if (!data) {
+    if (error || !plan) {
       return NextResponse.json(
         { error: "Meal plan not found" },
         { status: 404 }
       );
     }
 
-    return NextResponse.json(data);
+    return NextResponse.json({
+      plan,
+    });
   } catch (error: any) {
-    log(`Error in get endpoint: ${error.message}`, "mealplan");
+    log(`Error in mealplan/get: ${error.message}`, "mealplan");
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -65,9 +63,13 @@ export async function GET(
   }
 }
 
+/**
+ * DELETE /api/mealplan/[id]
+ * Delete a meal plan
+ */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
     const authResult = await authenticateRequest(request);
@@ -76,24 +78,25 @@ export async function DELETE(
     }
     const { userId } = authResult;
 
-    const { id: planId } = await params;
-
-    if (!supabaseAdmin) {
+    const dbClient = getSupabaseClient();
+    if (!dbClient) {
       return NextResponse.json(
         { error: "Database not configured" },
         { status: 500 }
       );
     }
 
-    // First verify the plan belongs to the user
-    const { data: existingPlan, error: fetchError } = await supabaseAdmin
+    const planId = params.id;
+
+    // Verify the plan belongs to the user
+    const { data: plan, error: fetchError } = await dbClient
       .from("meal_plans")
       .select("id")
       .eq("id", planId)
       .eq("user_id", userId)
       .single();
 
-    if (fetchError || !existingPlan) {
+    if (fetchError || !plan) {
       return NextResponse.json(
         { error: "Meal plan not found" },
         { status: 404 }
@@ -101,7 +104,7 @@ export async function DELETE(
     }
 
     // Delete the plan
-    const { error: deleteError } = await supabaseAdmin
+    const { error: deleteError } = await dbClient
       .from("meal_plans")
       .delete()
       .eq("id", planId)
@@ -115,13 +118,17 @@ export async function DELETE(
       );
     }
 
-    return NextResponse.json({ success: true, message: "Meal plan deleted successfully" });
+    log(`Meal plan deleted: ${planId} by user ${userId}`, "mealplan");
+
+    return NextResponse.json({
+      success: true,
+      message: "Meal plan deleted successfully",
+    });
   } catch (error: any) {
-    log(`Error in delete endpoint: ${error.message}`, "mealplan");
+    log(`Error in mealplan/delete: ${error.message}`, "mealplan");
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
     );
   }
 }
-

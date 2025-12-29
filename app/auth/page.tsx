@@ -11,6 +11,8 @@ import Link from "next/link";
 import { CheckCircle, ArrowLeft, AlertCircle } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { supabase } from "@/lib/supabase";
+import { getOnboardingStatus } from "@/lib/api";
 
 export default function Auth() {
   const router = useRouter();
@@ -37,21 +39,51 @@ export default function Auth() {
 
     try {
       const name = `${firstName} ${lastName}`.trim() || undefined;
-      await signUp(email, password, name);
-      setSuccess(true);
+      const result = await signUp(email, password, name);
       
-      // Store user type temporarily in localStorage
-      if (userType === "professional") {
-        localStorage.setItem("pendingUserType", "professional");
+      if (result?.user) {
+        setSuccess(true);
+        
+        // Get current user to check if customer_type is already set
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        const existingCustomerType = currentUser?.user_metadata?.customer_type;
+        
+        // Determine redirect based on plan
+        let finalRedirect = redirect;
+        
+        // If customer_type is not set, go to customer-type-selection
+        if (!existingCustomerType) {
+          finalRedirect = "/customer-type-selection";
+        } else {
+          // Customer type is set, determine redirect based on type and redirect param
+          const customerType = existingCustomerType;
+          
+          // If redirect is /pricing and user selected free tier, go to onboarding
+          if (redirect === "/pricing" && userType === "individual") {
+            finalRedirect = "/onboarding";
+          } else if (redirect === "/pricing" && userType === "professional") {
+            // Professional users go to professional onboarding
+            finalRedirect = "/professional-onboarding";
+          } else if (redirect === "/dashboard" || redirect === "/") {
+            // New signup should go to appropriate onboarding
+            if (customerType === "business") {
+              finalRedirect = "/professional-onboarding";
+            } else {
+              finalRedirect = "/onboarding";
+            }
+          } else if (redirect === "/onboarding" || redirect === "/professional-onboarding") {
+            // Already going to onboarding, keep it
+            finalRedirect = redirect;
+          }
+        }
+        
+        // Redirect after successful signup
+        setTimeout(() => {
+          router.push(finalRedirect);
+        }, 1500);
       }
-      
-      // Redirect after successful signup
-      setTimeout(() => {
-        router.push(redirect);
-      }, 1500);
     } catch (err: any) {
       setError(err.message || "Failed to create account");
-    } finally {
       setLoading(false);
     }
   };
@@ -63,10 +95,46 @@ export default function Auth() {
 
     try {
       await signIn(email, password);
-      router.push(redirect);
+      
+      // Get user metadata to determine redirect
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      const customerType = currentUser?.user_metadata?.customer_type;
+      
+      // Determine redirect based on customer type and onboarding status
+      let finalRedirect = redirect;
+      
+      // If redirect is /dashboard, check onboarding status
+      if (redirect === "/dashboard" || redirect === "/") {
+        try {
+          const onboardingStatus = await getOnboardingStatus();
+          
+          if (!onboardingStatus.completed) {
+            // Redirect to appropriate onboarding if not completed
+            if (customerType === "business") {
+              finalRedirect = "/professional-onboarding";
+            } else {
+              finalRedirect = "/onboarding";
+            }
+          } else {
+            // Onboarding complete, go to dashboard
+            finalRedirect = "/dashboard";
+          }
+        } catch (error) {
+          // If we can't check onboarding status, check customer_type
+          if (!customerType) {
+            // No customer type set, go to selection
+            finalRedirect = "/customer-type-selection";
+          } else if (customerType === "business") {
+            finalRedirect = "/professional-onboarding";
+          } else {
+            finalRedirect = "/onboarding";
+          }
+        }
+      }
+      
+      router.push(finalRedirect);
     } catch (err: any) {
       setError(err.message || "Failed to sign in");
-    } finally {
       setLoading(false);
     }
   };
@@ -139,20 +207,6 @@ export default function Auth() {
                       {loading ? "Signing in..." : "Log In"}
                     </Button>
                   </form>
-                  
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-black px-2 text-gray-400">Or continue with</span>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <Button variant="outline">Google</Button>
-                    <Button variant="outline">Apple</Button>
-                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -163,7 +217,9 @@ export default function Auth() {
                   {error && (
                     <Alert variant="destructive" className="bg-red-900/50 border-red-500">
                       <AlertCircle className="h-4 w-4" />
-                      <AlertDescription className="text-red-200">{error}</AlertDescription>
+                      <AlertDescription className="text-red-200">
+                        {error}
+                      </AlertDescription>
                     </Alert>
                   )}
                   {success && (
@@ -244,20 +300,6 @@ export default function Auth() {
                       {loading ? "Creating account..." : "Create Account"}
                     </Button>
                   </form>
-                  
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-black px-2 text-gray-400">Or continue with</span>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <Button variant="outline">Google</Button>
-                    <Button variant="outline">Apple</Button>
-                  </div>
                 </CardContent>
               </Card>
             </TabsContent>

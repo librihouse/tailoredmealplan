@@ -4,8 +4,11 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseAdmin } from "@/server/supabase";
+import { supabaseAdmin, supabase } from "@/server/supabase";
 import { authenticateRequest, log } from "@/lib/api-helpers";
+
+// Use admin client if available, otherwise fallback to regular client
+const getSupabaseClient = () => supabaseAdmin || supabase;
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,7 +18,8 @@ export async function GET(request: NextRequest) {
     }
     const { userId } = authResult;
 
-    if (!supabaseAdmin) {
+    const dbClient = getSupabaseClient();
+    if (!dbClient) {
       return NextResponse.json(
         { error: "Database not configured" },
         { status: 500 }
@@ -23,7 +27,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get subscription to determine user type
-    const { data: subscription } = await supabaseAdmin
+    const { data: subscription } = await dbClient
       .from("subscriptions")
       .select("plan_id")
       .eq("user_id", userId)
@@ -35,7 +39,7 @@ export async function GET(request: NextRequest) {
 
     if (isB2BPlan) {
       // Check business profile
-      const { data: businessProfile } = await supabaseAdmin
+      const { data: businessProfile } = await dbClient
         .from("business_profiles")
         .select("onboarding_completed")
         .eq("user_id", userId)
@@ -47,7 +51,7 @@ export async function GET(request: NextRequest) {
       });
     } else {
       // Check individual profile
-      const { data: userProfile } = await supabaseAdmin
+      const { data: userProfile } = await dbClient
         .from("user_profiles")
         .select("onboarding_completed")
         .eq("user_id", userId)

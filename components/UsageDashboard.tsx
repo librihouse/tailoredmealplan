@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Users } from "lucide-react";
+import { Calendar, Users, Coins } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface UsageProps {
@@ -9,6 +9,8 @@ interface UsageProps {
   monthlyPlansLimit: number;
   clientsUsed: number;
   clientsLimit: number;
+  creditsUsed?: number;
+  creditsLimit?: number;
   resetDate: Date;
 }
 
@@ -19,6 +21,8 @@ export function UsageDashboard({
   monthlyPlansLimit,
   clientsUsed,
   clientsLimit,
+  creditsUsed,
+  creditsLimit,
   resetDate,
 }: UsageProps) {
   const weeklyPercentage = weeklyPlansLimit > 0 
@@ -29,6 +33,9 @@ export function UsageDashboard({
     : 0;
   const clientsPercentage = clientsLimit > 0 && clientsLimit !== Infinity
     ? Math.min((clientsUsed / clientsLimit) * 100, 100)
+    : 0;
+  const creditsPercentage = creditsLimit && creditsLimit > 0
+    ? Math.min(((creditsUsed || 0) / creditsLimit) * 100, 100)
     : 0;
 
   const formatDate = (date: Date) => {
@@ -123,7 +130,18 @@ export function UsageDashboard({
         </div>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {creditsLimit !== undefined && (
+          <UsageCard
+            title="Credits"
+            used={creditsUsed || 0}
+            limit={creditsLimit}
+            percentage={creditsPercentage}
+            icon={Coins}
+            tooltip="Daily plans = 1 credit, Weekly plans = 2 credits, Monthly plans = 4 credits. Regenerations cost the same credits."
+          />
+        )}
+
         <UsageCard
           title="Weekly Plans"
           used={weeklyPlansUsed}

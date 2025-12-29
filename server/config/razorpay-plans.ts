@@ -50,7 +50,7 @@ export const RAZORPAY_PLANS: Record<string, RazorpayPlanConfig> = {
   // B2B Plans
   starter_monthly: {
     planId: "starter_monthly",
-    amount: 2900, // $29.00
+    amount: 1500, // $15.00
     currency: "USD",
     interval: "monthly",
     name: "Starter Monthly",
@@ -58,15 +58,15 @@ export const RAZORPAY_PLANS: Record<string, RazorpayPlanConfig> = {
   },
   starter_annual: {
     planId: "starter_annual",
-    amount: 28800, // $288.00
+    amount: 14400, // $144.00 ($12/month)
     currency: "USD",
     interval: "annual",
     name: "Starter Annual",
-    description: "Starter plan for professionals - Annual billing (Save $60/year)",
+    description: "Starter plan for professionals - Annual billing (Save $36/year)",
   },
   growth_monthly: {
     planId: "growth_monthly",
-    amount: 4900, // $49.00
+    amount: 3900, // $39.00
     currency: "USD",
     interval: "monthly",
     name: "Growth Monthly",
@@ -74,15 +74,15 @@ export const RAZORPAY_PLANS: Record<string, RazorpayPlanConfig> = {
   },
   growth_annual: {
     planId: "growth_annual",
-    amount: 46800, // $468.00
+    amount: 37200, // $372.00 ($31/month)
     currency: "USD",
     interval: "annual",
     name: "Growth Annual",
-    description: "Growth plan for professionals - Annual billing (Save $120/year)",
+    description: "Growth plan for professionals - Annual billing (Save $96/year)",
   },
   professional_monthly: {
     planId: "professional_monthly",
-    amount: 9900, // $99.00
+    amount: 3900, // $39.00
     currency: "USD",
     interval: "monthly",
     name: "Professional Monthly",
@@ -90,15 +90,15 @@ export const RAZORPAY_PLANS: Record<string, RazorpayPlanConfig> = {
   },
   professional_annual: {
     planId: "professional_annual",
-    amount: 94800, // $948.00
+    amount: 37200, // $372.00 ($31/month)
     currency: "USD",
     interval: "annual",
     name: "Professional Annual",
-    description: "Professional plan - Annual billing (Save $240/year)",
+    description: "Professional plan - Annual billing (Save $96/year)",
   },
   enterprise_monthly: {
     planId: "enterprise_monthly",
-    amount: 19900, // $199.00
+    amount: 7900, // $79.00
     currency: "USD",
     interval: "monthly",
     name: "Enterprise Monthly",
@@ -106,11 +106,11 @@ export const RAZORPAY_PLANS: Record<string, RazorpayPlanConfig> = {
   },
   enterprise_annual: {
     planId: "enterprise_annual",
-    amount: 190800, // $1908.00
+    amount: 75600, // $756.00 ($63/month)
     currency: "USD",
     interval: "annual",
     name: "Enterprise Annual",
-    description: "Enterprise plan - Annual billing (Save $480/year)",
+    description: "Enterprise plan - Annual billing (Save $192/year)",
   },
 };
 

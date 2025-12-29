@@ -15,17 +15,71 @@ export default function ResetPassword() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Start with loading true
+  const [isReady, setIsReady] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    // Check if we have a valid session from the password reset link
+    let mounted = true;
+
+    // Listen for auth state changes (handles recovery tokens from URL hash)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!mounted) return;
+
+        if (event === 'PASSWORD_RECOVERY') {
+          // Recovery token is being processed, user can now reset password
+          setLoading(false);
+          setIsReady(true);
+          setError(null);
+        } else if (event === 'SIGNED_IN' && session) {
+          // User is signed in (either from recovery or already had session)
+          setLoading(false);
+          setIsReady(true);
+          setError(null);
+        } else if (event === 'SIGNED_OUT') {
+          // User signed out, but might still be processing recovery
+          // Don't set error yet, wait a bit
+        }
+      }
+    );
+
+    // Check current session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
-        setError("Invalid or expired reset link. Please request a new password reset.");
+      if (!mounted) return;
+
+      if (session) {
+        // Already have a session, can reset password
+        setLoading(false);
+        setIsReady(true);
+        setError(null);
+      } else {
+        // No session yet - might be processing recovery token from URL
+        // Wait for onAuthStateChange to fire with PASSWORD_RECOVERY event
+        // Set a timeout to show error if nothing happens
+        setTimeout(() => {
+          if (!mounted) return;
+          // Check again after a short delay
+          supabase.auth.getSession().then(({ data: { session: newSession } }) => {
+            if (!mounted) return;
+            if (!newSession) {
+              setLoading(false);
+              setIsReady(false);
+              setError("Invalid or expired reset link. Please request a new password reset.");
+            } else {
+              setLoading(false);
+              setIsReady(true);
+            }
+          });
+        }, 1000);
       }
     });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -101,7 +155,39 @@ export default function ResetPassword() {
                 </Alert>
               )}
               
-              {!success ? (
+              {loading ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-center p-8">
+                    <div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                  <p className="text-center text-gray-400 text-sm">
+                    Verifying your reset link...
+                  </p>
+                </div>
+              ) : !isReady ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-center p-8 bg-red-900/10 rounded-lg border border-red-500/20">
+                    <AlertCircle className="h-12 w-12 text-red-500" />
+                  </div>
+                  <p className="text-center text-gray-400 text-sm mb-4">
+                    {error || "Invalid or expired reset link."}
+                  </p>
+                  <Button 
+                    variant="outline"
+                    className="w-full border-white/20 text-white hover:bg-white/10"
+                    onClick={() => router.push("/forgot-password")}
+                  >
+                    Request New Reset Link
+                  </Button>
+                  <Button 
+                    variant="ghost"
+                    className="w-full text-gray-400 hover:text-white"
+                    onClick={() => router.push("/auth")}
+                  >
+                    Back to Login
+                  </Button>
+                </div>
+              ) : !success ? (
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="password">New Password</Label>
