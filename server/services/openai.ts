@@ -297,7 +297,7 @@ ${safeUserProfile.age ? `- Age: ${safeUserProfile.age} years` : ""}
 ${safeUserProfile.height ? `- Height: ${safeUserProfile.height} cm` : ""}
 ${safeUserProfile.currentWeight ? `- Current Weight: ${safeUserProfile.currentWeight} kg` : ""}
 ${safeUserProfile.targetWeight ? `- Target Weight: ${safeUserProfile.targetWeight} kg` : ""}
-- Primary Goal: ${typeof safeUserProfile.goal === "string" ? safeUserProfile.goal.replace("_", " ") : (Array.isArray(safeUserProfile.goal) ? safeUserProfile.goal.join(", ") : String(safeUserProfile.goal || "health"))}
+- Primary Goal: ${(safeUserProfile.goal || "health").replace("_", " ")}
 ${safeUserProfile.secondaryGoals && Array.isArray(safeUserProfile.secondaryGoals) && safeUserProfile.secondaryGoals.length > 0 ? `- Secondary Goals: ${safeUserProfile.secondaryGoals.map((g: string) => g.replace("_", " ")).join(", ")}` : ""}
 - Activity Level: ${safeUserProfile.activity}
 - Daily Calorie Target: ${dailyCalories} kcal
