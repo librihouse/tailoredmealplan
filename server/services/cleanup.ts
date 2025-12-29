@@ -3,7 +3,7 @@
  * Handles automatic cleanup of expired meal plans and share links
  */
 
-import { supabaseAdmin, supabase } from "./supabase";
+import { supabaseAdmin, supabase } from "../supabase";
 import { log } from "../index";
 import { checkCreditExpiry } from "./credit-addon";
 
