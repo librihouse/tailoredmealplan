@@ -62,6 +62,9 @@ export interface UserProfile {
   cookingMethods?: string[];
   mealPrepPreference?: string;
   kitchenEquipment?: string[];
+  restaurantTypes?: string[];
+  deliveryServices?: string[];
+  mealPrepServices?: string[];
   typicalDaySchedule?: string;
   workSchedule?: string;
   lunchLocation?: string;
