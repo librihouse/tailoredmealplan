@@ -135,15 +135,13 @@ export function fillMissingNutrition(
       if (!meal.nutrition || !meal.nutrition.calories) {
         const estimated = estimateNutritionFromIngredients(meal.ingredients || []);
         
-        if (!meal.nutrition) {
-          meal.nutrition = {};
-        }
-
-        const originalCalories = meal.nutrition.calories || null;
-        meal.nutrition.calories = estimated.calories;
-        meal.nutrition.protein = meal.nutrition.protein || estimated.protein;
-        meal.nutrition.carbs = meal.nutrition.carbs || estimated.carbs;
-        meal.nutrition.fat = meal.nutrition.fat || estimated.fat;
+        const originalCalories = meal.nutrition?.calories || null;
+        meal.nutrition = {
+          calories: estimated.calories,
+          protein: meal.nutrition?.protein || estimated.protein,
+          carbs: meal.nutrition?.carbs || estimated.carbs,
+          fat: meal.nutrition?.fat || estimated.fat,
+        };
 
         corrections.push({
           field: `days[${dayIndex}].meals.${mealType}.nutrition`,
@@ -160,15 +158,13 @@ export function fillMissingNutrition(
         if (!snack.nutrition || !snack.nutrition.calories) {
           const estimated = estimateNutritionFromIngredients(snack.ingredients || []);
           
-          if (!snack.nutrition) {
-            snack.nutrition = {};
-          }
-
-          const originalCalories = snack.nutrition.calories || null;
-          snack.nutrition.calories = estimated.calories;
-          snack.nutrition.protein = snack.nutrition.protein || estimated.protein;
-          snack.nutrition.carbs = snack.nutrition.carbs || estimated.carbs;
-          snack.nutrition.fat = snack.nutrition.fat || estimated.fat;
+          const originalCalories = snack.nutrition?.calories || null;
+          snack.nutrition = {
+            calories: estimated.calories,
+            protein: snack.nutrition?.protein || estimated.protein,
+            carbs: snack.nutrition?.carbs || estimated.carbs,
+            fat: snack.nutrition?.fat || estimated.fat,
+          };
 
           corrections.push({
             field: `days[${dayIndex}].meals.snacks[${snackIndex}].nutrition`,
