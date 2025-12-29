@@ -1065,17 +1065,41 @@ export async function generateMealPlan(
       }
     }
 
+    // Helper function to create a default meal
+    const createDefaultMeal = (mealType: string): Meal => ({
+      name: `${mealType.charAt(0).toUpperCase() + mealType.slice(1)} Meal`,
+      ingredients: ["1 portion protein", "1 portion vegetables", "1 portion grains"],
+      instructions: `Prepare a balanced ${mealType} meal following standard cooking practices.`,
+      nutrition: { 
+        calories: Math.round(mealPlan.overview.dailyCalories / 3), 
+        protein: 20, 
+        carbs: 30, 
+        fat: 10 
+      }
+    });
+
     // Validate and repair each day structure (repair instead of throw)
     for (let i = 0; i < mealPlan.days.length; i++) {
       let day = mealPlan.days[i];
       if (!day || typeof day !== "object") {
         log(`WARNING: Day ${i + 1} is invalid, creating default structure`, "openai");
-        day = { day: i + 1, meals: {} };
+        day = { 
+          day: i + 1, 
+          meals: {
+            breakfast: createDefaultMeal("breakfast"),
+            lunch: createDefaultMeal("lunch"),
+            dinner: createDefaultMeal("dinner")
+          }
+        };
         mealPlan.days[i] = day;
       }
       if (!day.meals || typeof day.meals !== "object") {
         log(`WARNING: Day ${i + 1} missing meals object, creating default`, "openai");
-        day.meals = {};
+        day.meals = {
+          breakfast: createDefaultMeal("breakfast"),
+          lunch: createDefaultMeal("lunch"),
+          dinner: createDefaultMeal("dinner")
+        };
       }
       
       // Validate required meals exist - create if missing
