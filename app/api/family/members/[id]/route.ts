@@ -9,7 +9,7 @@ import { authenticateRequest, log } from "@/lib/api-helpers";
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await authenticateRequest(request);
@@ -18,7 +18,7 @@ export async function DELETE(
     }
     const { userId } = authResult;
 
-    const memberId = params.id;
+    const { id: memberId } = await params;
 
     if (!supabaseAdmin) {
       return NextResponse.json(

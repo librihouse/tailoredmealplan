@@ -30,7 +30,7 @@ function verifyAdminKey(request: NextRequest): boolean {
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   if (!verifyAdminKey(request)) {
     return NextResponse.json(
@@ -41,7 +41,7 @@ export async function PUT(
 
   try {
     const body = await request.json();
-    const planId = params.id;
+    const { id: planId } = await params;
 
     const dbClient = getSupabaseClient();
     if (!dbClient) {
@@ -104,7 +104,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   if (!verifyAdminKey(request)) {
     return NextResponse.json(
@@ -114,7 +114,7 @@ export async function DELETE(
   }
 
   try {
-    const planId = params.id;
+    const { id: planId } = await params;
 
     const dbClient = getSupabaseClient();
     if (!dbClient) {

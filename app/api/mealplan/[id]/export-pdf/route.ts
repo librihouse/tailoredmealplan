@@ -18,7 +18,7 @@ const getSupabaseClient = () => supabaseAdmin || supabase;
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await authenticateRequest(request);
@@ -35,7 +35,7 @@ export async function GET(
       );
     }
 
-    const planId = params.id;
+    const { id: planId } = await params;
 
     // Fetch the meal plan
     const { data: plan, error: planError } = await dbClient

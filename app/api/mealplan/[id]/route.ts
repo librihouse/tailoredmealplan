@@ -18,7 +18,7 @@ const getSupabaseClient = () => supabaseAdmin || supabase;
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await authenticateRequest(request);
@@ -35,7 +35,7 @@ export async function GET(
       );
     }
 
-    const planId = params.id;
+    const { id: planId } = await params;
 
     const { data: plan, error } = await dbClient
       .from("meal_plans")
@@ -69,7 +69,7 @@ export async function GET(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const authResult = await authenticateRequest(request);
@@ -86,7 +86,7 @@ export async function DELETE(
       );
     }
 
-    const planId = params.id;
+    const { id: planId } = await params;
 
     // Verify the plan belongs to the user
     const { data: plan, error: fetchError } = await dbClient
