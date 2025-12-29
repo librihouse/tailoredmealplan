@@ -513,6 +513,7 @@ export async function getMealPlanHistory(filters?: {
   return apiRequest<{
     plans: any[];
     total: number;
+    isFreeTier?: boolean;
   }>(`/mealplan/history${query ? `?${query}` : ""}`);
 }
 
