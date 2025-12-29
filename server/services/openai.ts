@@ -57,6 +57,7 @@ export interface UserProfile {
   foodsDisliked?: string[];
   flavorPreferences?: string[];
   texturePreferences?: string[];
+  mealSource?: string;
   cookingSkillLevel?: string;
   cookingTimeAvailable?: string;
   cookingMethods?: string[];
@@ -65,6 +66,9 @@ export interface UserProfile {
   restaurantTypes?: string[];
   deliveryServices?: string[];
   mealPrepServices?: string[];
+  orderingBudget?: string;
+  orderingFrequency?: string;
+  activityLevel?: string;
   typicalDaySchedule?: string;
   workSchedule?: string;
   lunchLocation?: string;
