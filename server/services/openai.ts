@@ -1103,11 +1103,13 @@ export async function generateMealPlan(
       }
       
       // Validate required meals exist - create if missing
-      const requiredMeals = ['breakfast', 'lunch', 'dinner'];
+      const requiredMeals: Array<'breakfast' | 'lunch' | 'dinner'> = ['breakfast', 'lunch', 'dinner'];
       for (const mealType of requiredMeals) {
-        if (!day.meals[mealType]) {
+        type MealKey = 'breakfast' | 'lunch' | 'dinner';
+        const mealKey = mealType as MealKey;
+        if (!day.meals[mealKey]) {
           log(`WARNING: Day ${i + 1} missing ${mealType}, creating placeholder`, "openai");
-          day.meals[mealType] = {
+          day.meals[mealKey] = {
             name: `${mealType.charAt(0).toUpperCase() + mealType.slice(1)} Meal`,
             ingredients: ["1 portion protein", "1 portion vegetables", "1 portion grains"],
             instructions: `Prepare a balanced ${mealType} meal following standard cooking practices.`,
@@ -1116,7 +1118,7 @@ export async function generateMealPlan(
         }
         
         // Validate and repair meal structure
-        const meal = day.meals[mealType];
+        const meal = day.meals[mealKey];
         
         // Repair name if missing
         if (!meal.name || typeof meal.name !== "string" || meal.name.trim().length === 0) {
@@ -1452,9 +1454,11 @@ export async function generateMealPlan(
     
     // Extract ingredients from all meals
     mealPlan.days.forEach((day: any) => {
-      ['breakfast', 'lunch', 'dinner'].forEach((mealType: string) => {
-        if (day.meals[mealType]?.ingredients && Array.isArray(day.meals[mealType].ingredients)) {
-          day.meals[mealType].ingredients.forEach((ing: string) => {
+      (['breakfast', 'lunch', 'dinner'] as const).forEach((mealType) => {
+        type MealKey = 'breakfast' | 'lunch' | 'dinner';
+        const mealKey = mealType as MealKey;
+        if (day.meals[mealKey]?.ingredients && Array.isArray(day.meals[mealKey].ingredients)) {
+          day.meals[mealKey].ingredients.forEach((ing: string) => {
             if (typeof ing !== "string" || !ing.trim()) return;
             
             // Skip excluded ingredients
