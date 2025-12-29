@@ -227,16 +227,16 @@ export default function GeneratingPage() {
         
         console.log("Meal plan generation result:", result);
 
-        if (result.success && result.mealPlanId) {
+        if (result.success && result.mealPlan?.id) {
           // Clear saved form data
           localStorage.removeItem(saveKey);
           
-          setMealPlanId(result.mealPlanId);
+          setMealPlanId(result.mealPlan.id);
           setStatus("success");
           
           // Redirect to meal plan detail page after short delay
           setTimeout(() => {
-            router.push(`/dashboard/plans/${result.mealPlanId}`);
+            router.push(`/dashboard/plans/${result.mealPlan.id}`);
           }, 1500);
         } else {
           throw new Error("Meal plan generation failed. Please try again.");
