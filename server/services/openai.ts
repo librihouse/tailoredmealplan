@@ -1164,15 +1164,17 @@ export async function generateMealPlan(
         }
         
         // Repair nutrition values - convert to numbers if needed
-        const requiredNutritionFields = ['calories', 'protein', 'carbs', 'fat'];
-        for (const field of requiredNutritionFields) {
-          if (meal.nutrition[field] === undefined || meal.nutrition[field] === null) {
-            log(`WARNING: Day ${i + 1} ${mealType} nutrition.${field} missing, using default`, "openai");
-            meal.nutrition[field] = field === 'calories' ? Math.round(mealPlan.overview.dailyCalories / 3) : 20;
-          } else if (typeof meal.nutrition[field] !== "number") {
-            log(`WARNING: Day ${i + 1} ${mealType} nutrition.${field} is not a number, converting`, "openai");
-            const numValue = parseFloat(String(meal.nutrition[field]));
-            meal.nutrition[field] = isNaN(numValue) ? (field === 'calories' ? Math.round(mealPlan.overview.dailyCalories / 3) : 20) : numValue;
+        type NutritionKey = 'calories' | 'protein' | 'carbs' | 'fat';
+        const nutritionFields: NutritionKey[] = ['calories', 'protein', 'carbs', 'fat'];
+        for (const field of nutritionFields) {
+          const nutritionKey = field as NutritionKey;
+          if (meal.nutrition[nutritionKey] === undefined || meal.nutrition[nutritionKey] === null) {
+            log(`WARNING: Day ${i + 1} ${mealType} nutrition.${nutritionKey} missing, using default`, "openai");
+            meal.nutrition[nutritionKey] = nutritionKey === 'calories' ? Math.round(mealPlan.overview.dailyCalories / 3) : 20;
+          } else if (typeof meal.nutrition[nutritionKey] !== "number") {
+            log(`WARNING: Day ${i + 1} ${mealType} nutrition.${nutritionKey} is not a number, converting`, "openai");
+            const numValue = parseFloat(String(meal.nutrition[nutritionKey]));
+            meal.nutrition[nutritionKey] = isNaN(numValue) ? (nutritionKey === 'calories' ? Math.round(mealPlan.overview.dailyCalories / 3) : 20) : numValue;
           }
         }
       }

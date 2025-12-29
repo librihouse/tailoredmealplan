@@ -48,7 +48,7 @@ export function validateMealPlan(mealPlan: MealPlanResponse): {
   // Check days array
   if (!mealPlan.days || !Array.isArray(mealPlan.days)) {
     errors.push({ field: 'days', message: 'Days array is missing or invalid' });
-    return { valid: false, errors };
+    return { valid: false, errors, warnings: [], canAutoCorrect: false };
   }
 
   if (mealPlan.days.length === 0) {
@@ -63,10 +63,12 @@ export function validateMealPlan(mealPlan: MealPlanResponse): {
     }
 
     // Check required meals
-    const requiredMeals = ['breakfast', 'lunch', 'dinner'];
+    const requiredMeals: Array<'breakfast' | 'lunch' | 'dinner'> = ['breakfast', 'lunch', 'dinner'];
     requiredMeals.forEach(mealType => {
-      const meal = day.meals[mealType as keyof typeof day.meals];
-      if (!meal || typeof meal !== 'object') {
+      type MealKey = 'breakfast' | 'lunch' | 'dinner';
+      const mealKey = mealType as MealKey;
+      const meal = day.meals[mealKey];
+      if (!meal || typeof meal !== 'object' || Array.isArray(meal)) {
         errors.push({ 
           field: `days[${dayIndex}].meals.${mealType}`, 
           message: `${mealType} meal is missing` 
@@ -105,17 +107,19 @@ export function validateMealPlan(mealPlan: MealPlanResponse): {
           message: 'Nutrition object is missing' 
         });
       } else {
-        const requiredNutritionFields = ['calories', 'protein', 'carbs', 'fat'];
-        requiredNutritionFields.forEach(field => {
-          if (meal.nutrition[field] === undefined || meal.nutrition[field] === null) {
+        type NutritionKey = 'calories' | 'protein' | 'carbs' | 'fat';
+        const nutritionFields: NutritionKey[] = ['calories', 'protein', 'carbs', 'fat'];
+        nutritionFields.forEach(field => {
+          const nutritionKey = field as NutritionKey;
+          if (meal.nutrition[nutritionKey] === undefined || meal.nutrition[nutritionKey] === null) {
             errors.push({ 
-              field: `days[${dayIndex}].meals.${mealType}.nutrition.${field}`, 
-              message: `${field} is missing` 
+              field: `days[${dayIndex}].meals.${mealType}.nutrition.${nutritionKey}`, 
+              message: `${nutritionKey} is missing` 
             });
-          } else if (typeof meal.nutrition[field] !== 'number') {
+          } else if (typeof meal.nutrition[nutritionKey] !== 'number') {
             errors.push({ 
-              field: `days[${dayIndex}].meals.${mealType}.nutrition.${field}`, 
-              message: `${field} must be a number` 
+              field: `days[${dayIndex}].meals.${mealType}.nutrition.${nutritionKey}`, 
+              message: `${nutritionKey} must be a number` 
             });
           }
         });
@@ -295,7 +299,7 @@ export async function retryGeneration(
             options: {
               ...request.options,
               _retryHint: 'CALORIE_TARGET_MISMATCH', // Internal flag for prompt enhancement
-            },
+            } as typeof request.options & { _retryHint?: string },
           };
         }
         
