@@ -74,13 +74,14 @@ const isValidSupabaseUrl = (url: string): boolean => {
   }
 };
 
-const hasValidCredentials = 
+const hasValidCredentials: boolean = Boolean(
   supabaseUrl && 
   supabaseAnonKey && 
   supabaseUrl.trim() !== '' && 
   supabaseAnonKey.trim() !== '' &&
   isValidSupabaseUrl(supabaseUrl) &&
-  supabaseAnonKey.length > 20; // Anon keys are typically long strings
+  supabaseAnonKey.length > 20 // Anon keys are typically long strings
+);
 
 // Debug logging (only in development, only in browser, not during build)
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
