@@ -6,8 +6,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin, supabase } from "@/server/supabase";
 import { authenticateRequest, log } from "@/lib/api-helpers";
-import { generateMealPlan, type UserProfile } from "@/server/services/openai";
-import { checkQuota, incrementUsage, getCreditsRequired, type PlanType } from "@/server/quota-supabase";
 
 // Use admin client if available, otherwise fallback to regular client
 const getSupabaseClient = () => supabaseAdmin || supabase;
