@@ -1009,6 +1009,11 @@ async function generateMonthlyPlanInChunks(
           _chunkEnd: chunk.end,
           _chunkNumber: chunk.number,
           _totalChunks: 3,
+        } as typeof request.options & { 
+          _chunkStart?: number; 
+          _chunkEnd?: number; 
+          _chunkNumber?: number; 
+          _totalChunks?: number;
         },
       };
 
