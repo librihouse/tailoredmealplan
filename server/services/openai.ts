@@ -1432,7 +1432,7 @@ export async function generateMealPlan(
     try {
       mealPlan = JSON.parse(responseContent);
       // #region agent log - Hypothesis C: Parse success
-      fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'openai.ts:945',message:'JSON parsed successfully',data:{parseTime:Date.now()-parseStartTime,hasOverview:!!mealPlan.overview,hasDays:!!mealPlan.days,daysCount:mealPlan.days?.length,hasGroceryList:!!mealPlan.groceryList},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+      fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'openai.ts:945',message:'JSON parsed successfully',data:{parseTime:Date.now()-parseStartTime,hasOverview:!!mealPlan?.overview,hasDays:!!mealPlan?.days,daysCount:mealPlan?.days?.length,hasGroceryList:!!mealPlan?.groceryList},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
       // #endregion
       log(`JSON parsed successfully in ${Date.now() - parseStartTime}ms`, "openai");
     } catch (parseError: any) {
