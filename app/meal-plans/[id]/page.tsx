@@ -10,6 +10,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getMealPlan, deleteMealPlan } from "@/lib/api";
 import { useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
 import { 
   Download, 
   Trash2, 
