@@ -1230,6 +1230,7 @@ export async function generateMealPlan(
   let parseStartTime = Date.now();
   let isChunked = false;
   let startTime: number | undefined = undefined; // Track start time for error handling
+  let timeoutMs: number | undefined = undefined; // Track timeout for error handling
 
   if (duration === 30 && request.planType === "monthly") {
     log("Routing monthly plan to chunking strategy", "openai");
@@ -1280,7 +1281,7 @@ export async function generateMealPlan(
     // #region agent log - Hypothesis A,B: Duration check and timeout calculation
     fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'openai.ts:899',message:'Timeout calculation start',data:{planType:request.planType,duration,durationCheck30:duration===30,durationCheck7:duration===7,optionsDuration:request.options?.duration},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A,B'})}).catch(()=>{});
     // #endregion
-    const timeoutMs = duration === 30 ? 600000 : duration === 7 ? 180000 : 120000; // 10min monthly (chunked), 3min weekly, 2min daily
+    timeoutMs = duration === 30 ? 600000 : duration === 7 ? 180000 : 120000; // 10min monthly (chunked), 3min weekly, 2min daily
     // #region agent log - Hypothesis A,B: Calculated timeout value
     fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'openai.ts:900',message:'Timeout calculated',data:{timeoutMs,timeoutSeconds:timeoutMs/1000,isMonthly:duration===30,isWeekly:duration===7,isDaily:duration===1},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A,B'})}).catch(()=>{});
     // #endregion
@@ -2195,7 +2196,7 @@ export async function generateMealPlan(
         error.message?.includes("taking longer than expected") || error.name === "AbortError") {
       const elapsedTime = startTime ? Date.now() - startTime : 0;
       // #region agent log - Hypothesis C,D,E: Timeout error occurred
-      fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'openai.ts:1710',message:'Timeout error caught',data:{errorMessage:error.message,elapsedTime,timeoutMs,expectedTimeout:timeoutMs,planType:request.planType,has300000:error.message?.includes("300000"),has5minutes:error.message?.includes("5 minutes"),has300seconds:error.message?.includes("300 seconds")},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C,D,E'})}).catch(()=>{});
+      fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'openai.ts:1710',message:'Timeout error caught',data:{errorMessage:error.message,elapsedTime,timeoutMs:timeoutMs||0,expectedTimeout:timeoutMs||0,planType:request.planType,has300000:error.message?.includes("300000"),has5minutes:error.message?.includes("5 minutes"),has300seconds:error.message?.includes("300 seconds")},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C,D,E'})}).catch(()=>{});
       // #endregion
       log(`Timeout error occurred: ${error.message}`, "openai");
       
