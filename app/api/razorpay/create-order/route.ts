@@ -17,21 +17,17 @@ export async function POST(request: NextRequest) {
     const { userId } = authResult;
 
     const body = await request.json();
-    const { planId, billingInterval } = body;
+    const { planId } = body;
 
-    if (!planId || !billingInterval) {
+    if (!planId) {
       return NextResponse.json(
-        { error: "planId and billingInterval are required" },
+        { error: "planId is required" },
         { status: 400 }
       );
     }
 
-    if (!["monthly", "annual"].includes(billingInterval)) {
-      return NextResponse.json(
-        { error: "billingInterval must be 'monthly' or 'annual'" },
-        { status: 400 }
-      );
-    }
+    // Only monthly billing for MVP
+    const billingInterval = "monthly";
 
     // Build full plan ID (e.g., "individual_monthly")
     const fullPlanId = `${planId}_${billingInterval}`;

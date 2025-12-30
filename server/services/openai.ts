@@ -13,18 +13,45 @@ import { networkMonitor } from "./network-monitor";
 // Lazy initialization - only create client when needed
 let openaiClient: OpenAI | null = null;
 
-function getOpenAIClient(): OpenAI {
-  if (!openaiClient) {
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      throw new Error("OPENAI_API_KEY is not configured. Please add it to your .env.local file.");
-    }
-    openaiClient = new OpenAI({
+function getOpenAIClient(timeoutMs?: number): OpenAI {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error("OPENAI_API_KEY is not configured. Please add it to your .env.local file.");
+  }
+  
+  // #region agent log - Hypothesis B: Client creation decision
+  fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'openai.ts:getOpenAIClient',message:'getOpenAIClient called',data:{timeoutMs,hasTimeout:!!timeoutMs,timeoutGreaterThan300k:timeoutMs?timeoutMs>300000:false,hasExistingClient:!!openaiClient},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+  // #endregion
+  
+  // For monthly plans (timeout > 5 min), don't set client timeout - rely on custom timeout promise
+  // The OpenAI SDK may have internal limits that prevent timeouts > 5 minutes
+  if (timeoutMs && timeoutMs > 300000) {
+    log(`Creating OpenAI client WITHOUT timeout for monthly plans (will use custom ${timeoutMs/1000}s timeout)`, "openai");
+    // #region agent log - Hypothesis B: Creating new client without timeout for monthly plans
+    fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'openai.ts:25',message:'Creating new OpenAI client WITHOUT timeout for monthly plans',data:{timeoutMs,timeoutSeconds:timeoutMs/1000,reason:'SDK may have 5min limit'},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
+    // Create client without timeout - our custom timeout promise will handle it
+    return new OpenAI({
       apiKey,
-      timeout: 300000, // 5 minutes timeout to accommodate large token responses
+      timeout: 600000, // Set to 10 minutes to avoid SDK limits, but our custom timeout will fire first
       maxRetries: 0, // We handle retries in quality-assurance.ts
     });
   }
+  
+  // Use singleton for standard timeouts
+  if (!openaiClient) {
+    // #region agent log - Hypothesis B: Creating singleton client with default timeout
+    fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'openai.ts:34',message:'Creating singleton OpenAI client with default timeout',data:{timeout:300000,timeoutSeconds:300},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
+    openaiClient = new OpenAI({
+      apiKey,
+      timeout: 300000, // 5 minutes default timeout
+      maxRetries: 0, // We handle retries in quality-assurance.ts
+    });
+  }
+  // #region agent log - Hypothesis B: Returning client (singleton or new)
+  fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'openai.ts:40',message:'Returning OpenAI client',data:{isNewClient:timeoutMs&&timeoutMs>300000,isSingleton:!timeoutMs||timeoutMs<=300000},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+  // #endregion
   return openaiClient;
 }
 
@@ -840,6 +867,347 @@ function extractPartialJson(text: string): MealPlanResponse | null {
 }
 
 /**
+ * Build prompt for chunked monthly plan generation
+ */
+function buildChunkPrompt(request: MealPlanRequest, chunkStart: number, chunkEnd: number, chunkNumber: number, totalChunks: number): string {
+  const basePrompt = buildPrompt({
+    ...request,
+    options: {
+      ...request.options,
+      duration: chunkEnd - chunkStart + 1, // Duration for this chunk
+    },
+  });
+  
+  // Add chunk context at the beginning of the prompt
+  const chunkContext = `IMPORTANT: This is PART ${chunkNumber} of ${totalChunks} of a 30-day meal plan.
+You are generating days ${chunkStart} through ${chunkEnd} of the complete 30-day meal plan.
+Ensure day numbers in your response are correct: day ${chunkStart} through day ${chunkEnd}.
+Maintain consistency with the overall 30-day plan structure and user preferences.
+The grocery list you generate should include ingredients for days ${chunkStart}-${chunkEnd} only (it will be merged with other chunks later).
+
+`;
+
+  return chunkContext + basePrompt.replace(
+    `Generate a personalized ${request.planType} meal plan (${chunkEnd - chunkStart + 1} days)`,
+    `Generate days ${chunkStart}-${chunkEnd} of a personalized 30-day meal plan (part ${chunkNumber} of ${totalChunks})`
+  );
+}
+
+/**
+ * Merge multiple meal plan chunks into a single 30-day plan
+ */
+function mergeMealPlanChunks(
+  chunks: Array<{ mealPlan: MealPlanResponse; usage: { promptTokens: number; completionTokens: number; totalTokens: number } }>
+): { mealPlan: MealPlanResponse; usage: { promptTokens: number; completionTokens: number; totalTokens: number } } {
+  if (chunks.length === 0) {
+    throw new Error("No chunks to merge");
+  }
+
+  // Use first chunk's overview as base, but ensure duration is 30
+  const mergedPlan: MealPlanResponse = {
+    overview: {
+      ...chunks[0].mealPlan.overview,
+      duration: 30,
+      type: "monthly",
+    },
+    days: [],
+    groceryList: {},
+  };
+
+  // Merge all days from all chunks
+  chunks.forEach((chunk) => {
+    if (chunk.mealPlan.days && Array.isArray(chunk.mealPlan.days)) {
+      mergedPlan.days.push(...chunk.mealPlan.days);
+    }
+  });
+
+  // Sort days by day number to ensure correct order
+  mergedPlan.days.sort((a, b) => (a.day || 0) - (b.day || 0));
+
+  // Aggregate token usage
+  const aggregatedUsage = chunks.reduce(
+    (acc, chunk) => ({
+      promptTokens: acc.promptTokens + chunk.usage.promptTokens,
+      completionTokens: acc.completionTokens + chunk.usage.completionTokens,
+      totalTokens: acc.totalTokens + chunk.usage.totalTokens,
+    }),
+    { promptTokens: 0, completionTokens: 0, totalTokens: 0 }
+  );
+
+  // Re-aggregate grocery list from all merged days using existing logic
+  // This will be done in the main generateMealPlan function after merging
+  // For now, combine grocery lists from chunks (they'll be re-processed)
+  const combinedGroceryList: Record<string, string[]> = {};
+  chunks.forEach((chunk) => {
+    if (chunk.mealPlan.groceryList) {
+      Object.keys(chunk.mealPlan.groceryList).forEach((category) => {
+        if (!combinedGroceryList[category]) {
+          combinedGroceryList[category] = [];
+        }
+        const items = chunk.mealPlan.groceryList[category];
+        if (Array.isArray(items)) {
+          combinedGroceryList[category].push(...items);
+        }
+      });
+    }
+  });
+  mergedPlan.groceryList = combinedGroceryList;
+
+  return {
+    mealPlan: mergedPlan,
+    usage: aggregatedUsage,
+  };
+}
+
+/**
+ * Generate monthly meal plan in chunks to avoid OpenAI SDK 5-minute timeout
+ */
+async function generateMonthlyPlanInChunks(
+  request: MealPlanRequest
+): Promise<{ mealPlan: MealPlanResponse; usage: { promptTokens: number; completionTokens: number; totalTokens: number } }> {
+  log("Generating monthly plan in 3 chunks (days 1-10, 11-20, 21-30) to avoid timeout", "openai");
+  
+  // Total timeout budget: 10 minutes (600000ms) for all chunks + merge + validation
+  const totalTimeoutMs = 600000;
+  const startTime = Date.now();
+  
+  const chunks = [
+    { start: 1, end: 10, number: 1 },
+    { start: 11, end: 20, number: 2 },
+    { start: 21, end: 30, number: 3 },
+  ];
+
+  const chunkResults: Array<{ mealPlan: MealPlanResponse; usage: { promptTokens: number; completionTokens: number; totalTokens: number } }> = [];
+  const errors: Array<{ chunk: number; error: string }> = [];
+
+  // Generate each chunk sequentially to avoid rate limits
+  for (const chunk of chunks) {
+    try {
+      // Calculate remaining time budget before starting this chunk
+      const elapsed = Date.now() - startTime;
+      const remaining = totalTimeoutMs - elapsed;
+      
+      // Calculate dynamic chunk timeout: max 2.5min (150000ms), but leave 30s buffer for merge/validation
+      const chunkTimeout = Math.min(150000, remaining - 30000);
+      
+      // Check if we have sufficient time to complete this chunk
+      if (chunkTimeout < 60000) {
+        const errorMsg = `Insufficient time remaining for chunk ${chunk.number} (days ${chunk.start}-${chunk.end}): ${remaining}ms remaining, need at least 60000ms`;
+        log(errorMsg, "openai");
+        throw new Error(errorMsg);
+      }
+      
+      log(`Generating chunk ${chunk.number}/3: days ${chunk.start}-${chunk.end} (timeout: ${chunkTimeout}ms, remaining budget: ${remaining}ms)`, "openai");
+      
+      // Create chunk-specific request
+      const chunkRequest: MealPlanRequest = {
+        ...request,
+        options: {
+          ...request.options,
+          duration: chunk.end - chunk.start + 1,
+          _chunkStart: chunk.start,
+          _chunkEnd: chunk.end,
+          _chunkNumber: chunk.number,
+          _totalChunks: 3,
+        },
+      };
+
+      // Build chunk-specific prompt
+      const chunkPrompt = buildChunkPrompt(request, chunk.start, chunk.end, chunk.number, 3);
+      
+      // Generate this chunk using the core generation logic with dynamic timeout
+      const chunkResult = await generateMealPlanChunk(chunkRequest, chunkPrompt, chunk.start, chunk.end, chunkTimeout);
+      chunkResults.push(chunkResult);
+      
+      const chunkElapsed = Date.now() - startTime;
+      log(`Chunk ${chunk.number}/3 completed: ${chunkResult.mealPlan.days.length} days generated in ${chunkElapsed - elapsed}ms (total elapsed: ${chunkElapsed}ms)`, "openai");
+    } catch (error: any) {
+      const errorMsg = `Failed to generate chunk ${chunk.number} (days ${chunk.start}-${chunk.end}): ${error.message}`;
+      log(errorMsg, "openai");
+      errors.push({ chunk: chunk.number, error: errorMsg });
+      
+      // Continue with other chunks even if one fails
+      // We'll handle partial success in merge
+    }
+  }
+
+  // If all chunks failed, throw error with detailed information
+  if (chunkResults.length === 0) {
+    const errorDetails = errors.map(e => `Chunk ${e.chunk}: ${e.error}`).join('; ');
+    throw new Error(`Monthly plan generation failed: All 3 chunks failed. ${errorDetails}. Please try again or contact support if the issue persists.`);
+  }
+
+  // If some chunks failed, log warning but continue with partial success
+  if (errors.length > 0) {
+    const failedChunks = errors.map(e => e.chunk).join(', ');
+    log(`WARNING: ${errors.length} chunk(s) failed (chunks: ${failedChunks}). Proceeding with ${chunkResults.length} successful chunk(s).`, "openai");
+    // Note: We'll return partial plan, but user should be aware
+  }
+
+  // Merge chunks
+  const merged = mergeMealPlanChunks(chunkResults);
+  
+  // Validate merged result has expected number of days
+  if (merged.mealPlan.days.length < 30 && errors.length === 0) {
+    log(`WARNING: Merged plan has ${merged.mealPlan.days.length} days instead of 30`, "openai");
+  }
+  
+  log(`Monthly plan generation complete: ${merged.mealPlan.days.length} days merged from ${chunkResults.length} chunks${errors.length > 0 ? ` (${errors.length} chunk(s) failed)` : ''}`, "openai");
+  
+  return merged;
+}
+
+/**
+ * Generate a single chunk of a meal plan (internal helper)
+ */
+async function generateMealPlanChunk(
+  request: MealPlanRequest,
+  prompt: string,
+  chunkStart: number,
+  chunkEnd: number,
+  timeoutMs: number = 150000 // Default 2.5 minutes per chunk (reduced from 3 minutes)
+): Promise<{ mealPlan: MealPlanResponse; usage: { promptTokens: number; completionTokens: number; totalTokens: number } }> {
+  const startTime = Date.now();
+  const duration = chunkEnd - chunkStart + 1;
+  
+  // Use provided timeout (default 2.5 minutes, well within 5-minute SDK limit)
+  const openai = getOpenAIClient(timeoutMs);
+
+  let timeoutId: NodeJS.Timeout | null = null;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => {
+        const elapsedTime = Date.now() - startTime;
+        log(`Chunk timeout after ${timeoutMs}ms (days ${chunkStart}-${chunkEnd}, elapsed: ${elapsedTime}ms)`, "openai");
+        reject(new Error(`Request timeout after ${timeoutMs}ms for chunk (days ${chunkStart}-${chunkEnd}).`));
+      }, timeoutMs);
+  });
+
+  const apiCallPromise = openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    messages: [
+      {
+        role: "system",
+        content: "You are a Board-Certified Clinical Nutritionist (CNS) and Registered Dietitian (RD) with 15+ years of experience. You create evidence-based, therapeutic meal plans following USDA Dietary Guidelines, Academy of Nutrition and Dietetics standards, and current peer-reviewed research. You generate detailed, personalized meal plans in JSON format. Always return valid JSON only, no markdown or code blocks. Your recommendations prioritize safety, therapeutic appropriateness, and evidence-based nutrition science.",
+      },
+      {
+        role: "user",
+        content: prompt,
+      },
+    ],
+    temperature: 0.7,
+    max_tokens: 6000, // Reduced for 10-day chunks (well within limit)
+    response_format: { type: "json_object" },
+  });
+
+  try {
+    const completion = await Promise.race([apiCallPromise, timeoutPromise]);
+    
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+
+    const apiCallTime = Date.now() - startTime;
+    networkMonitor.recordSuccess(apiCallTime);
+
+    const usage = {
+      promptTokens: completion.usage?.prompt_tokens || 0,
+      completionTokens: completion.usage?.completion_tokens || 0,
+      totalTokens: completion.usage?.total_tokens || 0,
+    };
+
+    log(`Chunk token usage - Prompt: ${usage.promptTokens}, Completion: ${usage.completionTokens}, Total: ${usage.totalTokens}`, "openai");
+    log(`Chunk performance - API call time: ${apiCallTime}ms, Days: ${chunkStart}-${chunkEnd}`, "openai");
+
+    const responseContent = completion.choices[0]?.message?.content;
+    const finishReason = completion.choices[0]?.finish_reason;
+
+    if (!responseContent) {
+      throw new Error("No response content from OpenAI");
+    }
+
+    // Parse JSON response
+    let mealPlan: MealPlanResponse;
+    const parseStartTime = Date.now();
+
+    try {
+      mealPlan = JSON.parse(responseContent);
+      log(`Chunk JSON parsed successfully in ${Date.now() - parseStartTime}ms`, "openai");
+    } catch (parseError: any) {
+      log(`Chunk JSON parse failed: ${parseError.message}`, "openai");
+      
+      // Try extracting from markdown
+      const jsonMatch = responseContent.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/);
+      if (jsonMatch) {
+        try {
+          mealPlan = JSON.parse(jsonMatch[1]);
+          log("Chunk JSON extracted from markdown", "openai");
+        } catch (extractError: any) {
+          const fixedJson = fixCommonJsonErrors(jsonMatch[1]);
+          mealPlan = JSON.parse(fixedJson);
+          log("Chunk JSON fixed and parsed", "openai");
+        }
+      } else {
+        const jsonObjectMatch = responseContent.match(/\{[\s\S]*\}/);
+        if (jsonObjectMatch) {
+          const fixedJson = fixCommonJsonErrors(jsonObjectMatch[0]);
+          mealPlan = JSON.parse(fixedJson);
+          log("Chunk JSON object found and parsed", "openai");
+        } else {
+          throw new Error(`Failed to parse chunk JSON response: ${parseError.message}`);
+        }
+      }
+    }
+
+    // Validate and repair chunk structure
+    if (!mealPlan.overview) {
+      mealPlan.overview = {
+        dailyCalories: request.options?.calories || calculateDailyCalories(request.userProfile),
+        macros: { protein: 150, carbs: 200, fat: 67 },
+        duration: duration,
+        type: "monthly",
+      };
+    }
+    if (!mealPlan.days) {
+      mealPlan.days = [];
+    }
+    if (!Array.isArray(mealPlan.days)) {
+      mealPlan.days = [];
+    }
+    if (!mealPlan.groceryList) {
+      mealPlan.groceryList = {};
+    }
+
+    // Ensure day numbers are correct for this chunk
+    mealPlan.days.forEach((day, index) => {
+      const expectedDay = chunkStart + index;
+      if (day.day !== expectedDay) {
+        log(`WARNING: Chunk day number mismatch. Expected day ${expectedDay}, got day ${day.day}. Fixing.`, "openai");
+        day.day = expectedDay;
+      }
+    });
+
+    // Ensure we have the right number of days
+    if (mealPlan.days.length !== duration) {
+      log(`WARNING: Chunk expected ${duration} days, got ${mealPlan.days.length}. Adjusting.`, "openai");
+      if (mealPlan.days.length > duration) {
+        mealPlan.days = mealPlan.days.slice(0, duration);
+      } else {
+        // If we got fewer days, that's okay - use what we have
+        log(`Chunk has ${mealPlan.days.length} days instead of ${duration}`, "openai");
+      }
+    }
+
+    return { mealPlan, usage };
+  } catch (error: any) {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    networkMonitor.recordFailure();
+    throw error;
+  }
+}
+
+/**
  * Generate meal plan using OpenAI GPT-4o-mini
  */
 export async function generateMealPlan(
@@ -849,83 +1217,182 @@ export async function generateMealPlan(
     throw new Error("OPENAI_API_KEY is not configured");
   }
 
-  let prompt: string;
-  try {
-    prompt = buildPrompt(request);
-    
-    // Validate prompt before sending
-    const promptValidation = validatePrompt(prompt);
-    if (!promptValidation.valid) {
-      log(`Prompt validation failed: ${promptValidation.errors.join(', ')}`, "openai");
-      throw new Error(`Invalid prompt: ${promptValidation.errors.join(', ')}`);
-    }
-    
-    // Check prompt length and log statistics
-    const promptStats = getPromptStats(prompt);
-    log(`Prompt stats: ${promptStats.length} chars, ~${promptStats.estimatedTokens} tokens, ${promptStats.lineCount} lines`, "openai");
-    
-    // Warn if prompt is very long
-    if (isPromptTooLong("", prompt, 100000)) {
-      log(`WARNING: Prompt is very long (${promptStats.estimatedTokens} estimated tokens)`, "openai");
-    }
-  } catch (error: any) {
-    log(`Error building prompt: ${error.message}`, "openai");
-    throw error;
-  }
   const duration = request.options?.duration || (request.planType === "monthly" ? 30 : request.planType === "weekly" ? 7 : 1);
 
-  log("Generating meal plan with OpenAI", "openai");
-  log(`Plan type: ${request.planType}, Duration: ${duration} days`, "openai");
+  // For monthly plans (30 days), use chunking strategy to avoid OpenAI SDK 5-minute timeout
+  let mealPlan: MealPlanResponse | null = null;
+  let usage: { promptTokens: number; completionTokens: number; totalTokens: number } | null = null;
+  let parseStartTime = Date.now();
+  let isChunked = false;
 
-  // Track performance metrics
-  const startTime = Date.now();
-  const promptBuildTime = startTime - (startTime - (Date.now() - startTime));
+  if (duration === 30 && request.planType === "monthly") {
+    log("Routing monthly plan to chunking strategy", "openai");
+    const chunkedResult = await generateMonthlyPlanInChunks(request);
+    mealPlan = chunkedResult.mealPlan;
+    usage = chunkedResult.usage;
+    parseStartTime = Date.now();
+    isChunked = true;
+    log("Chunked generation complete, proceeding to validation and aggregation", "openai");
+  }
 
-  // Get OpenAI client (will throw if API key is missing)
-  const openai = getOpenAIClient();
+  // If not chunked, generate normally
+  if (!isChunked) {
+    let prompt: string;
+    try {
+      prompt = buildPrompt(request);
+    
+      // Validate prompt before sending
+      const promptValidation = validatePrompt(prompt);
+      if (!promptValidation.valid) {
+        log(`Prompt validation failed: ${promptValidation.errors.join(', ')}`, "openai");
+        throw new Error(`Invalid prompt: ${promptValidation.errors.join(', ')}`);
+      }
+      
+      // Check prompt length and log statistics
+      const promptStats = getPromptStats(prompt);
+      log(`Prompt stats: ${promptStats.length} chars, ~${promptStats.estimatedTokens} tokens, ${promptStats.lineCount} lines`, "openai");
+      
+      // Warn if prompt is very long
+      if (isPromptTooLong("", prompt, 100000)) {
+        log(`WARNING: Prompt is very long (${promptStats.estimatedTokens} estimated tokens)`, "openai");
+      }
+    } catch (error: any) {
+      log(`Error building prompt: ${error.message}`, "openai");
+      throw error;
+    }
 
-  // Calculate timeout based on plan duration (longer plans need more time)
-  // With increased token limits, generation takes longer
-  const timeoutMs = duration === 30 ? 300000 : duration === 7 ? 180000 : 120000; // 5min monthly, 3min weekly, 2min daily
-  
-  log(`Using timeout of ${timeoutMs / 1000}s for ${request.planType} plan (${duration} days)`, "openai");
+    log("Generating meal plan with OpenAI", "openai");
+    log(`Plan type: ${request.planType}, Duration: ${duration} days`, "openai");
 
-  try {
-    // Create a timeout promise
+    // Track performance metrics
+    const startTime = Date.now();
+    const promptBuildTime = startTime - (startTime - (Date.now() - startTime));
+
+    // Calculate timeout based on plan duration (longer plans need more time)
+    // With increased token limits, generation takes longer
+    // Monthly plans need more time due to 30 days of content generation
+    // #region agent log - Hypothesis A,B: Duration check and timeout calculation
+    fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'openai.ts:899',message:'Timeout calculation start',data:{planType:request.planType,duration,durationCheck30:duration===30,durationCheck7:duration===7,optionsDuration:request.options?.duration},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A,B'})}).catch(()=>{});
+    // #endregion
+    const timeoutMs = duration === 30 ? 600000 : duration === 7 ? 180000 : 120000; // 10min monthly (chunked), 3min weekly, 2min daily
+    // #region agent log - Hypothesis A,B: Calculated timeout value
+    fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'openai.ts:900',message:'Timeout calculated',data:{timeoutMs,timeoutSeconds:timeoutMs/1000,isMonthly:duration===30,isWeekly:duration===7,isDaily:duration===1},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A,B'})}).catch(()=>{});
+    // #endregion
+    
+    log(`Using timeout of ${timeoutMs / 1000}s for ${request.planType} plan (${duration} days)`, "openai");
+    log(`OpenAI client timeout: ${timeoutMs > 300000 ? timeoutMs : 300000}ms`, "openai");
+
+    // Get OpenAI client with appropriate timeout (will throw if API key is missing)
+    // #region agent log - Hypothesis B: Client creation with timeout
+    fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'openai.ts:905',message:'Calling getOpenAIClient',data:{timeoutMs,timeoutGreaterThan300k:timeoutMs>300000},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
+    const openai = getOpenAIClient(timeoutMs);
+
+    try {
+    // Create a timeout promise (Note: OpenAI SDK has a hard 5-minute timeout limit)
+    // Even though we set client timeout to 10 minutes, the SDK may still timeout at 5 minutes
+    let timeoutId: NodeJS.Timeout | null = null;
+    // #region agent log - Hypothesis C,E: Custom timeout promise creation
+    fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'openai.ts:909',message:'Creating custom timeout promise',data:{timeoutMs,timeoutSeconds:timeoutMs/1000,startTime,note:'SDK may timeout at 5min despite client timeout'},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C,E'})}).catch(()=>{});
+    // #endregion
     const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => {
+      timeoutId = setTimeout(() => {
+        const elapsedTime = Date.now() - startTime;
+        // #region agent log - Hypothesis C,E: Custom timeout fired
+        fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'openai.ts:911',message:'Custom timeout fired',data:{timeoutMs,elapsedTime,expectedTimeout:timeoutMs,planType:request.planType},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C,E'})}).catch(()=>{});
+        // #endregion
         log(`Request timeout after ${timeoutMs}ms for ${request.planType} plan`, "openai");
         reject(new Error(`Request timeout after ${timeoutMs}ms. The meal plan generation is taking longer than expected. Please try again.`));
       }, timeoutMs);
     });
 
     // Race between API call and timeout
+    // Note: OpenAI SDK may timeout at 5 minutes despite client timeout setting
+    // #region agent log - Hypothesis C,D: Starting API call race
+    fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'openai.ts:917',message:'Starting Promise.race for API call',data:{timeoutMs,startTime,planType:request.planType,duration,clientTimeout:openai.timeout,note:'SDK may have 5min hard limit'},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C,D'})}).catch(()=>{});
+    // #endregion
+    
+    // Create API call promise with error tracking
+    // Note: OpenAI SDK doesn't support AbortController signal parameter
+    const apiCallPromise = openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: "You are a Board-Certified Clinical Nutritionist (CNS) and Registered Dietitian (RD) with 15+ years of experience. You create evidence-based, therapeutic meal plans following USDA Dietary Guidelines, Academy of Nutrition and Dietetics standards, and current peer-reviewed research. You generate detailed, personalized meal plans in JSON format. Always return valid JSON only, no markdown or code blocks. Your recommendations prioritize safety, therapeutic appropriateness, and evidence-based nutrition science.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      temperature: 0.7,
+      max_tokens: duration === 30 ? 16384 : duration === 7 ? 10000 : 4000, // Model limit: 16K monthly (gpt-4o-mini max), 10K weekly, 4K daily
+      response_format: { type: "json_object" },
+    });
+    
+    // Wrap apiCallPromise to track when it rejects
+    const trackedApiCallPromise = apiCallPromise.catch((apiError: any) => {
+      const elapsedTime = Date.now() - startTime;
+      // #region agent log - Hypothesis C,D: OpenAI API call error caught before Promise.race
+      fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'openai.ts:apiCall-catch',message:'OpenAI API call error caught before Promise.race',data:{errorMessage:apiError?.message,errorCode:apiError?.code,errorStatus:apiError?.status,elapsedTime,timeoutMs,isTimeout:apiError?.message?.includes('timeout')||apiError?.message?.includes('Timeout')||apiError?.name==='AbortError',isAbortError:apiError?.name==='AbortError',has300000:apiError?.message?.includes('300000'),has420000:apiError?.message?.includes('420000')},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C,D'})}).catch(()=>{});
+      // #endregion
+      // Re-throw to let Promise.race handle it
+      throw apiError;
+    });
+    
+    // #region agent log - Hypothesis C,D: About to start Promise.race
+    fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'openai.ts:before-race',message:'About to start Promise.race',data:{timeoutMs,startTime,planType:request.planType},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C,D'})}).catch(()=>{});
+    // #endregion
+    
+    let raceResolved = false;
+    let raceWinner: 'api' | 'timeout' | 'unknown' = 'unknown';
+    let raceElapsedTime = 0;
+    
     const completion = await Promise.race([
-      openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content: "You are a Board-Certified Clinical Nutritionist (CNS) and Registered Dietitian (RD) with 15+ years of experience. You create evidence-based, therapeutic meal plans following USDA Dietary Guidelines, Academy of Nutrition and Dietetics standards, and current peer-reviewed research. You generate detailed, personalized meal plans in JSON format. Always return valid JSON only, no markdown or code blocks. Your recommendations prioritize safety, therapeutic appropriateness, and evidence-based nutrition science.",
-          },
-          {
-            role: "user",
-            content: prompt,
-          },
-        ],
-        temperature: 0.7,
-        max_tokens: duration === 30 ? 16000 : duration === 7 ? 10000 : 4000, // Increased: 16K monthly, 10K weekly, 4K daily
-        response_format: { type: "json_object" },
+      trackedApiCallPromise.then((result) => {
+        raceResolved = true;
+        raceWinner = 'api';
+        raceElapsedTime = Date.now() - startTime;
+        // #region agent log - Hypothesis C,D: Promise.race resolved with API result
+        fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'openai.ts:race-api-win',message:'Promise.race resolved with API result',data:{raceElapsedTime,timeoutMs,planType:request.planType},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C,D'})}).catch(()=>{});
+        // #endregion
+        return result;
+      }).catch((error) => {
+        raceResolved = true;
+        raceWinner = 'api';
+        raceElapsedTime = Date.now() - startTime;
+        // #region agent log - Hypothesis C,D: Promise.race rejected with API error
+        fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'openai.ts:race-api-error',message:'Promise.race rejected with API error',data:{raceElapsedTime,timeoutMs,errorMessage:error?.message,planType:request.planType},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C,D'})}).catch(()=>{});
+        // #endregion
+        throw error;
       }),
-      timeoutPromise,
+      timeoutPromise.catch((error) => {
+        raceResolved = true;
+        raceWinner = 'timeout';
+        raceElapsedTime = Date.now() - startTime;
+        // #region agent log - Hypothesis C,D: Promise.race rejected with timeout
+        fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'openai.ts:race-timeout',message:'Promise.race rejected with timeout',data:{raceElapsedTime,timeoutMs,planType:request.planType},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C,D'})}).catch(()=>{});
+        // #endregion
+        throw error;
+      }),
     ]);
+    
+    // Clear timeout if API call completed successfully
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
 
     const apiCallTime = Date.now() - startTime;
+    // #region agent log - Hypothesis C,D: API call completed successfully
+    fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'openai.ts:937',message:'API call completed successfully',data:{apiCallTime,timeoutMs,wasWithinTimeout:apiCallTime<timeoutMs,planType:request.planType},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C,D'})}).catch(()=>{});
+    // #endregion
     
     // Record successful API call in network monitor
     networkMonitor.recordSuccess(apiCallTime);
     
-    const usage = {
+    // Set usage for non-chunked path
+    usage = {
       promptTokens: completion.usage?.prompt_tokens || 0,
       completionTokens: completion.usage?.completion_tokens || 0,
       totalTokens: completion.usage?.total_tokens || 0,
@@ -953,8 +1420,8 @@ export async function generateMealPlan(
     }
 
     // Parse JSON response with multiple fallback strategies
-    let mealPlan: MealPlanResponse;
-    const parseStartTime = Date.now();
+    mealPlan = {} as MealPlanResponse; // Will be assigned in parsing
+    parseStartTime = Date.now();
     
     // Strategy 1: Direct JSON parse
     try {
@@ -1024,6 +1491,26 @@ export async function generateMealPlan(
       }
     }
 
+    // Set usage for non-chunked path
+    usage = {
+      promptTokens: completion.usage?.prompt_tokens || 0,
+      completionTokens: completion.usage?.completion_tokens || 0,
+      totalTokens: completion.usage?.total_tokens || 0,
+    };
+    } catch (apiError: any) {
+      // Handle API call errors for non-chunked path
+      networkMonitor.recordFailure();
+      log(`OpenAI API error (non-chunked): ${apiError.message}`, "openai");
+      throw apiError;
+    }
+  }
+
+  // Both chunked and non-chunked paths continue here for validation and aggregation
+  if (!mealPlan || !usage) {
+    throw new Error("Failed to generate meal plan: no result obtained");
+  }
+
+  try {
     // Validate and repair response structure (don't throw, repair instead)
     log("Validating meal plan structure...", "openai");
     if (!mealPlan.overview) {
@@ -1682,6 +2169,10 @@ export async function generateMealPlan(
 
     return { mealPlan, usage };
   } catch (error: any) {
+    // Clear timeout if it's still active (only for non-chunked path)
+    // Note: timeoutId is only defined in the non-chunked path
+    // For chunked paths, timeouts are handled within generateMealPlanChunk
+    
     // Record failure in network monitor
     networkMonitor.recordFailure();
     
@@ -1692,9 +2183,23 @@ export async function generateMealPlan(
       log(`Network is unhealthy (${networkMonitor.getStatus().consecutiveFailures} consecutive failures)`, "openai");
     }
     
-    // Handle timeout errors
-    if (error.message?.includes("timeout") || error.message?.includes("Timeout")) {
+    // Handle timeout errors - check this FIRST before other error types
+    // Also check for AbortError which indicates our custom timeout fired
+    if (error.message?.includes("timeout") || error.message?.includes("Timeout") || 
+        error.message?.includes("taking longer than expected") || error.name === "AbortError") {
+      const elapsedTime = Date.now() - startTime;
+      // #region agent log - Hypothesis C,D,E: Timeout error occurred
+      fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'openai.ts:1710',message:'Timeout error caught',data:{errorMessage:error.message,elapsedTime,timeoutMs,expectedTimeout:timeoutMs,planType:request.planType,has300000:error.message?.includes("300000"),has5minutes:error.message?.includes("5 minutes"),has300seconds:error.message?.includes("300 seconds")},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C,D,E'})}).catch(()=>{});
+      // #endregion
       log(`Timeout error occurred: ${error.message}`, "openai");
+      
+      // Check if it's client timeout (5 min) or custom timeout (7 min)
+      if (error.message?.includes("300000") || error.message?.includes("5 minutes") || 
+          error.message?.includes("300 seconds")) {
+        log("WARNING: OpenAI client timeout (5 min) fired before custom timeout (7 min)", "openai");
+        throw new Error(`Request timeout. The OpenAI client timeout (5 minutes) was reached. This has been fixed - please try again.`);
+      }
+      
       throw new Error(`Request timeout. The meal plan generation is taking longer than expected. Please try again.`);
     }
     
@@ -1712,7 +2217,8 @@ export async function generateMealPlan(
       throw new Error("OpenAI API key is invalid.");
     } else if (error.status === 500) {
       throw new Error("OpenAI service is temporarily unavailable. Please try again later.");
-    } else if (error.message?.includes("JSON")) {
+    } else if (error.message?.includes("JSON") && !error.message?.includes("timeout")) {
+      // Only treat as JSON parse error if it's not a timeout
       throw new Error("Failed to parse meal plan response. Please try again.");
     }
     

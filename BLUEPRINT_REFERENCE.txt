@@ -13,8 +13,8 @@ EXECUTIVE SUMMARY
 Current State: MVP Development Phase - Active Testing & Improvement
 Focus: B2C Market (Free, Individual, Family Plans)
 Pricing Model: Simplified 3-tier structure
-Status: Core features implemented, weekly plan testing in progress, preparing for launch
-Last Updated: December 29, 2025
+Status: Core features implemented, monthly plan testing in progress, pricing accuracy improvements needed
+Last Updated: December 30, 2025
 
 Current Pricing Structure:
 - Free: 7 credits lifetime, $0
@@ -22,52 +22,100 @@ Current Pricing Structure:
 - Family: 210 credits/month, $14.99/month, 5 family members
 
 ================================================================================
-CURRENT WORK STATUS (As of December 29, 2025)
+CURRENT WORK STATUS (As of December 30, 2025)
 ================================================================================
 
-ACTIVE WORK: Weekly Meal Plan Testing & Improvement
+ACTIVE WORK: Individual Plan Testing with Razorpay, Monthly Plan Improvements (Paid Plans Only)
 
-Recent Completions (Today):
-✅ Fixed weekly plan timeout issues
+Testing Status Summary:
+✅ Daily Meal Plan: Tested and working, minor improvements pending
+✅ Weekly Meal Plan: Tested and working, minor improvements pending
+🔒 Monthly Meal Plan: Locked for free tier, available only for Individual and Family plans
+   - Monthly plan improvements deferred to Individual plan testing phase
+   - Free tier users see upgrade prompt when attempting to access monthly plans
+
+Recent Completions (December 29-30, 2025):
+
+✅ Locked monthly plan for free tier (December 30, 2025)
+   - Monthly plan feature now only available for Individual and Family plans
+   - Dashboard shows locked state with "Upgrade to Unlock" prompt for free tier users
+   - Backend validation prevents API-level bypass (403 error for free tier monthly requests)
+   - Pricing page updated to remove monthly plan from Free tier section
+   - Monthly tab disabled in dashboard for free tier users
+   - Monthly route blocked with redirect for free tier users
+
+✅ Fixed monthly plan timeout issues (December 30, 2025)
+   - Increased OpenAI client timeout to 10 minutes for monthly plans (chunked generation)
+   - Increased Next.js API route maxDuration to 600s (10 minutes)
+   - Increased frontend API timeout to 10 minutes
+   - Updated estimated time display to "7-10 minutes" for monthly plans
+   - Implemented chunking strategy (3 chunks of 10 days each) to avoid SDK timeout limits
+   - Added timeout budget tracking to prevent starting chunks when insufficient time remains
+   - Improved error handling to distinguish timeout errors from parse errors
+
+✅ Fixed monthly plan token limits (December 30, 2025)
+   - Increased max_tokens to 16,384 (GPT-4o-mini limit) for monthly plans
+   - Implemented chunking with 6,000 tokens per chunk
+   - Ensures complete responses for 30 days of content
+   - Prevents JSON truncation errors
+
+✅ Fixed weekly plan timeout issues (December 29, 2025)
    - Increased OpenAI client timeout to 5 minutes
    - Increased Next.js API route maxDuration to 5 minutes
    - Increased frontend API timeout to 5 minutes
    - Added proper timeout error handling
 
-✅ Fixed weekly plan token limits
+✅ Fixed weekly plan token limits (December 29, 2025)
    - Increased max_tokens from 4,000 to 10,000 for weekly plans
-   - Increased max_tokens from 8,000 to 16,000 for monthly plans
    - Fixed JSON parsing errors caused by truncated responses
 
-✅ Implemented grocery list quantity aggregation
+✅ Implemented grocery list quantity aggregation (December 29, 2025)
    - Aggregates quantities across all days (e.g., 1 tbsp + 2 tbsp = 3 tbsp total)
    - Converts to practical shopping units (e.g., 19 tbsp → 1 cup + 3 tbsp)
    - Filters unnecessary items (salt to taste, water, etc.)
    - Proper categorization for all cuisines
    - Applies to daily, weekly, and monthly plans
 
-✅ Fixed PDF generation issues
+✅ Fixed PDF generation issues (December 29, 2025)
    - Removed empty white pages
    - Applied theme background to all pages
    - Professional footer formatting
 
-✅ Improved user experience
-   - Added estimated time display on generating page (2-3 min for weekly)
+✅ Improved user experience (December 29, 2025)
+   - Added estimated time display on generating page (2-3 min for weekly, 5-7 min for monthly)
    - Fixed navigation issues (reliable page transitions)
    - Removed Share and Regenerate buttons per requirements
 
 Current Testing Focus:
-🔄 Weekly meal plan generation
-   - Verifying grocery list aggregation accuracy
-   - Testing timeout handling for 2-3 minute generations
-   - Validating unit conversions work correctly
-   - Ensuring all 7 days are properly included
-   - Checking PDF export quality
+✅ Free tier testing completed
+   - Daily and weekly plans tested and working
+   - Monthly plan locked for free tier (as intended)
+   - Plan deletion and expiration working correctly
+   - Minor improvements identified for daily/weekly plans (to be fixed during paid plan testing)
 
-Next Steps:
-⚠️ Monthly meal plan testing (after weekly is stable)
-⚠️ End-to-end testing of all plan types
-⚠️ Cross-browser and mobile device testing
+🔄 Individual Plan Testing (Next Phase)
+   - Test subscription upgrade flow using Razorpay test cards
+   - Test all plan types (daily, weekly, monthly) on Individual plan tier
+   - Monthly plan generation improvements will be tested and refined during this phase
+   - Verify credit deduction works correctly for all plan types
+   - Collect comprehensive data on all plan types
+   - Identify and fix any issues with meal plan generation quality
+
+Pending Improvements:
+⚠️ Daily meal plan: Minor improvements identified during free tier testing (to be fixed during Individual plan testing)
+⚠️ Weekly meal plan: Minor improvements identified during free tier testing (to be fixed during Individual plan testing)
+⚠️ Monthly meal plan: Improvements will be identified and applied during Individual plan testing phase
+
+Next Steps (Priority Order):
+1. ⚠️ Test Individual plan subscription upgrade using Razorpay test cards (see RAZORPAY TESTING & PLAN UPGRADE INSTRUCTIONS section)
+2. ⚠️ Test all plan types (daily, weekly, monthly) on Individual plan tier
+   - Use Razorpay test cards for payment testing
+   - Collect comprehensive data on all plan types
+   - Verify credit deduction works correctly
+   - Test monthly plan generation and improve quality
+   - Fix any issues identified during free tier testing
+3. ⚠️ End-to-end testing of all plan types across all tiers
+4. ⚠️ Cross-browser and mobile device testing
 
 ================================================================================
 MVP LAUNCH READINESS CHECKLIST
@@ -80,19 +128,24 @@ PRE-LAUNCH REQUIREMENTS:
 
 1. Core Functionality 
    ✅ Meal plan generation (daily, weekly, monthly)
-   - ✅ Daily meal plan: Fully working and tested
-   - 🔄 Weekly meal plan: Currently in testing and improvement phase
+   - ✅ Daily meal plan: Tested and working, some improvements pending
+     * Core functionality verified
+     * Minor improvements identified during testing
+     * Status: Functional, improvements to be applied
+   - 🔄 Weekly meal plan: Tested and working, some improvements pending
      * Fixed timeout issues (increased to 5 minutes for generation)
      * Fixed token limits (increased to 10,000 tokens for weekly plans)
      * Fixed grocery list quantity aggregation (sums across all 7 days)
      * Fixed navigation issues (reliable page transitions)
      * Fixed PDF generation with proper formatting
      * Added estimated time display (2-3 minutes) on generating page
-     * Status: Testing and fine-tuning in progress
-   - ⚠️ Monthly meal plan: Code ready, not yet tested
-     * Token limits configured (16,000 tokens)
-     * Timeout configured (5 minutes)
-     * Should work with same logic as weekly, needs testing
+     * Status: Functional, minor improvements pending
+   - 🔄 Monthly meal plan: Currently testing and improving
+     * Fixed timeout issues (increased to 7 minutes for generation)
+     * Fixed token limits (increased to 20,000 tokens for monthly plans)
+     * Updated estimated time display (5-7 minutes) on generating page
+     * Improved error handling for timeout scenarios
+     * Status: Active testing phase, improvements being identified and applied
    
    ✅ User onboarding and profile management
    ✅ Credit system and quota management
@@ -103,9 +156,15 @@ PRE-LAUNCH REQUIREMENTS:
 
 2. Payment & Subscription System
    ⚠️ Razorpay integration (verify end-to-end flow)
+     * Use Razorpay test cards for testing (see RAZORPAY TESTING INSTRUCTIONS section)
+     * Test Free → Individual upgrade flow
+     * Test Individual → Family upgrade flow
+     * Verify credit allocation after subscription
    ⚠️ Subscription creation and management
    ⚠️ Plan upgrade/downgrade flow
    ⚠️ Payment failure handling
+     * Test with failure cards (insufficient funds, declined, etc.)
+     * Verify error messages are user-friendly
    ⚠️ Subscription cancellation flow
    ⚠️ Invoice generation and email delivery
 
@@ -142,7 +201,11 @@ PRE-LAUNCH REQUIREMENTS:
 
 7. Testing & Quality Assurance
    ⚠️ End-to-end testing of user flows
-   ⚠️ Payment flow testing (test mode)
+   ⚠️ Payment flow testing with Razorpay test cards (see RAZORPAY TESTING INSTRUCTIONS section)
+     * Test all plan types (daily, weekly, monthly) on Individual plan tier
+     * Test subscription upgrade flows (Free → Individual → Family)
+     * Test payment failure scenarios
+     * Verify credit allocation and deduction
    ⚠️ Cross-browser testing
    ⚠️ Mobile device testing
    ⚠️ Load testing (if applicable)
@@ -354,8 +417,11 @@ COMPLETED FEATURES (As of Latest Update)
 ================================================================================
 
 ✅ Core Meal Plan Generation
-   - ✅ Daily plan generation: Fully working and tested
-   - 🔄 Weekly plan generation: In active testing phase
+   - ✅ Daily plan generation: Tested and working, some improvements pending
+     * Core functionality verified
+     * Minor improvements identified during testing
+     * Status: Functional, improvements to be applied
+   - 🔄 Weekly plan generation: Tested and working, some improvements pending
      * Timeout issues resolved (5-minute timeout for generation)
      * Token limit increased to 10,000 tokens (was 4,000)
      * Grocery list quantity aggregation implemented (sums all 7 days)
@@ -363,8 +429,13 @@ COMPLETED FEATURES (As of Latest Update)
      * Filtering of unnecessary items (salt to taste, water, etc.)
      * Proper categorization (paneer→dairy, ghee→dairy, dal→protein)
      * Estimated time display on generating page (2-3 minutes)
-     * Status: Testing and quality improvements ongoing
-   - ⚠️ Monthly plan generation: Code ready, awaiting testing
+     * Status: Functional, minor improvements pending
+   - 🔄 Monthly plan generation: Currently testing and improving
+     * Timeout issues resolved (7-minute timeout for generation, increased from 5 minutes)
+     * Token limit increased to 20,000 tokens (was 16,000)
+     * Estimated time display on generating page (5-7 minutes)
+     * Improved error handling for timeout scenarios
+     * Status: Active testing phase, improvements being identified and applied
    - OpenAI GPT-4o-mini integration
    - Cultural, religious, and allergen prioritization in prompts
    - Meal plan validation and quality assurance
@@ -546,7 +617,14 @@ General best practices for implementing features:
 LAUNCH READINESS PRIORITIES
 ================================================================================
 
-Week 1: Critical Launch Blockers
+Current Phase: Pre-Launch Testing & Improvements (December 30, 2025)
+- Complete monthly meal plan testing and improvements
+- Update pricing structure for accuracy
+- Fix business logic issues before Individual plan testing
+- Test all plan types on Individual plan tier using Razorpay test cards
+- Collect comprehensive data on all plan types
+
+Week 1: Critical Launch Blockers (After Current Testing Phase)
 - Email notification system
 - Payment method management
 - Billing history page
@@ -562,8 +640,8 @@ Week 2: User Experience & Content
 - Mobile responsiveness fixes
 
 Week 3: Testing & Polish
-- End-to-end testing
-- Payment flow testing
+- End-to-end testing across all tiers (Free, Individual, Family)
+- Payment flow testing with Razorpay test cards
 - Cross-browser testing
 - Performance optimization
 - Security audit
@@ -609,6 +687,221 @@ Quality Assurance:
 - Categorization: Proper categorization for all cuisines (Indian, Western, Asian, etc.)
 
 ================================================================================
+RAZORPAY TESTING INSTRUCTIONS
+================================================================================
+
+For testing payment flows and subscription upgrades, use Razorpay test cards:
+
+Test Card Numbers (All cards expire in any future date, CVV: any 3 digits):
+- Success: 4111 1111 1111 1111
+- Success (Visa): 4012 0010 3714 1112
+- Success (Mastercard): 5104 0600 0000 0008
+- Success (RuPay): 6074 8200 0000 0000
+- Failure (Insufficient Funds): 4000 0000 0000 9995
+- Failure (Card Declined): 4000 0000 0000 0002
+- Failure (Invalid CVV): 4000 0000 0000 0127
+- Failure (Expired Card): 4000 0000 0000 0069
+
+Test Card Details:
+- Cardholder Name: Any name
+- Expiry Date: Any future date (e.g., 12/25)
+- CVV: Any 3 digits (e.g., 123)
+- OTP: Use "123456" for any OTP prompt
+
+Testing Scenarios:
+1. Free Tier → Individual Plan Upgrade
+   - Use success card (4111 1111 1111 1111)
+   - Verify subscription creation
+   - Verify credit allocation (42 credits/month)
+   - Verify plan access changes
+
+2. Individual Plan → Family Plan Upgrade
+   - Use success card (4111 1111 1111 1111)
+   - Verify subscription upgrade
+   - Verify credit allocation (210 credits/month)
+   - Verify family member access
+
+3. Payment Failure Testing
+   - Use failure cards to test error handling
+   - Verify user-friendly error messages
+   - Verify subscription status remains unchanged on failure
+
+4. Subscription Renewal Testing
+   - Test automatic renewal flow
+   - Verify credit reset on renewal
+   - Verify billing period updates
+
+Important Notes:
+- Always use Razorpay test mode for development/testing
+- Test mode API keys are different from production keys
+- Test mode does not process real payments
+- All test transactions are logged in Razorpay dashboard
+- Switch to production mode only after thorough testing
+
+================================================================================
+RAZORPAY TESTING & PLAN UPGRADE INSTRUCTIONS
+================================================================================
+
+This section provides step-by-step instructions for testing Individual plan upgrades
+and improving meal plan generation quality during the testing phase.
+
+STEP 1: UPGRADE FROM FREE TIER TO INDIVIDUAL PLAN
+
+1. Navigate to Pricing Page:
+   - Go to /pricing in your browser
+   - You should see Free Tier, Individual, and Family plan cards
+   - Verify Free Tier shows only Daily and Weekly plans (no Monthly)
+
+2. Select Individual Plan:
+   - Click "Start 7-Day Trial" or "Subscribe" button on Individual plan card
+   - You'll be redirected to Razorpay checkout
+
+3. Use Razorpay Test Card:
+   - Card Number: 4111 1111 1111 1111 (Success card)
+   - Cardholder Name: Any name (e.g., "Test User")
+   - Expiry Date: Any future date (e.g., 12/25)
+   - CVV: Any 3 digits (e.g., 123)
+   - OTP: Enter "123456" when prompted
+
+4. Complete Payment:
+   - Click "Pay" button
+   - Enter OTP: 123456
+   - Payment should succeed and redirect to dashboard
+
+5. Verify Upgrade:
+   - Check dashboard shows "Individual Plan" (not "Free Plan")
+   - Verify credit allocation: 42 credits/month should be displayed
+   - Monthly tab should now be accessible (no longer locked)
+   - Monthly tab should show "Create Monthly Plan" button
+
+STEP 2: TEST MEAL PLAN GENERATION ON INDIVIDUAL PLAN
+
+1. Test Daily Plan Generation:
+   - Navigate to dashboard
+   - Click "Daily" tab
+   - Click "Create Daily Plan" button
+   - Fill out questionnaire or use saved preferences
+   - Click "Generate Meal Plan"
+   - Verify generation completes successfully
+   - Check meal plan quality:
+     * All meals have proper names, ingredients, instructions
+     * Nutrition values are present and reasonable
+     * Grocery list is properly aggregated
+   - Note any issues or improvements needed
+
+2. Test Weekly Plan Generation:
+   - Navigate to dashboard
+   - Click "Weekly" tab
+   - Click "Create Weekly Plan" button
+   - Fill out questionnaire
+   - Click "Generate Meal Plan"
+   - Wait 2-3 minutes for generation
+   - Verify generation completes successfully
+   - Check meal plan quality:
+     * All 7 days are present
+     * Each day has breakfast, lunch, dinner (and snacks if selected)
+     * Grocery list aggregates quantities across all 7 days
+     * Unit conversions are practical (e.g., 19 tbsp → 1 cup + 3 tbsp)
+   - Note any issues or improvements needed
+
+3. Test Monthly Plan Generation:
+   - Navigate to dashboard
+   - Click "Monthly" tab (should be unlocked now)
+   - Click "Create Monthly Plan" button
+   - Fill out questionnaire
+   - Click "Generate Meal Plan"
+   - Wait 7-10 minutes for generation (chunked generation)
+   - Monitor generation progress
+   - Verify generation completes successfully
+   - Check meal plan quality:
+     * All 30 days are present (not just days 21-30)
+     * Each day has complete meals with nutrition
+     * Grocery list properly aggregates across all 30 days
+     * No timeout errors occur
+     * PDF export works correctly
+   - Note any issues or improvements needed
+
+STEP 3: IMPROVE MEAL PLAN QUALITY
+
+During testing, identify and document issues:
+
+1. Common Issues to Watch For:
+   - Missing days in monthly plans (should have all 30 days)
+   - Incomplete meal data (missing ingredients, instructions, nutrition)
+   - Grocery list not properly aggregated
+   - Unit conversions not practical
+   - Timeout errors during generation
+   - PDF export issues
+
+2. Document Issues:
+   - Note the plan type (daily/weekly/monthly)
+   - Record the specific issue
+   - Capture screenshots if possible
+   - Note any error messages
+
+3. Test Multiple Scenarios:
+   - Different dietary preferences (vegan, keto, etc.)
+   - Different health goals (lose weight, build muscle, etc.)
+   - Different cuisines (Indian, Mediterranean, etc.)
+   - Different calorie targets
+   - Family member profiles (if testing Family plan)
+
+4. Verify Credit Deduction:
+   - Check credits before generation
+   - Generate a plan
+   - Verify credits deducted correctly:
+     * Daily: 1 credit
+     * Weekly: 2 credits
+     * Monthly: 4 credits
+   - Check credits after generation
+
+STEP 4: TEST SUBSCRIPTION FEATURES
+
+1. Verify Credit Reset:
+   - Note current credit usage
+   - Wait for billing period end (or manually trigger if possible)
+   - Verify credits reset to 42 credits/month
+
+2. Test Plan Limits:
+   - Generate plans up to credit limit
+   - Verify proper error messages when credits exhausted
+   - Verify upgrade prompts appear
+
+3. Test Family Plan Upgrade (Optional):
+   - Upgrade from Individual to Family plan
+   - Verify credit allocation: 210 credits/month
+   - Test family member profile creation
+   - Test meal plan generation for family members
+
+STEP 5: FIX IDENTIFIED ISSUES
+
+1. Prioritize Issues:
+   - Critical: Plans not generating, missing days, timeout errors
+   - High: Incomplete data, poor quality
+   - Medium: UI/UX improvements
+   - Low: Minor formatting issues
+
+2. Apply Fixes:
+   - Fix backend issues (timeouts, chunking, validation)
+   - Improve prompt engineering for better quality
+   - Fix frontend display issues
+   - Update error messages
+
+3. Re-test After Fixes:
+   - Generate plans again with same parameters
+   - Verify issues are resolved
+   - Document any remaining issues
+
+IMPORTANT REMINDERS:
+- Always use Razorpay test cards (never real cards in test mode)
+- Test in test mode only (verify API keys are test keys)
+- Document all issues found during testing
+- Test edge cases (very high/low calories, unusual dietary restrictions)
+- Verify all 30 days are present in monthly plans
+- Check grocery list aggregation accuracy
+- Test PDF export for all plan types
+
+================================================================================
 TECHNICAL DEBT & FUTURE CONSIDERATIONS
 ================================================================================
 
@@ -618,14 +911,41 @@ Known Issues to Address:
 - Billing history page needs creation
 - Legal pages need content
 - FAQ page needs creation
+- Pricing structure needs accuracy updates
+- Business logic fixes needed before Individual plan testing
 
 Current Work in Progress:
-- Weekly meal plan generation: Testing and quality improvements
-  * Verifying grocery list aggregation works correctly
-  * Testing timeout handling for longer generations
-  * Validating unit conversions and practical shopping units
-  * Ensuring all 7 days are properly included
-- Monthly meal plan: Awaiting testing after weekly plan is stable
+✅ Monthly plan locked for free tier (December 30, 2025)
+   - Feature restricted to Individual and Family plans only
+   - Free tier users see upgrade prompts
+   - Backend validation prevents API bypass
+
+🔄 Individual Plan Testing Phase (Next)
+   - Test subscription upgrade using Razorpay test cards
+   - Test all plan types (daily, weekly, monthly) on Individual tier
+   - Monthly plan improvements will be tested and refined
+   - Fix issues identified during free tier testing
+   - Improve meal plan generation quality
+
+Pending Improvements:
+- Daily meal plan: Minor improvements identified during free tier testing (to be fixed during Individual plan testing)
+- Weekly meal plan: Minor improvements identified during free tier testing (to be fixed during Individual plan testing)
+- Monthly meal plan: Improvements will be identified and applied during Individual plan testing phase
+
+Next Phase (Individual Plan Testing):
+1. Test subscription upgrade from Free to Individual using Razorpay test cards
+   - Follow RAZORPAY TESTING & PLAN UPGRADE INSTRUCTIONS section
+   - Verify upgrade flow works correctly
+   - Verify credit allocation (42 credits/month)
+2. Test all plan types on Individual plan tier:
+   - Daily plans: Verify quality and fix any issues
+   - Weekly plans: Verify quality and fix any issues
+   - Monthly plans: Test chunked generation, verify all 30 days, improve quality
+3. Fix identified issues:
+   - Apply fixes for issues found during free tier testing
+   - Improve prompt engineering based on test results
+   - Fix any timeout or generation issues
+4. End-to-end testing across all tiers
 
 Future Enhancements:
 - Recipe library and favorites

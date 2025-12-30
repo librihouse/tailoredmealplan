@@ -24,7 +24,6 @@ interface UpgradeModalProps {
 }
 
 export function UpgradeModal({ open, onOpenChange }: UpgradeModalProps) {
-  const [isAnnual, setIsAnnual] = useState(false);
   const { isAuthenticated, user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
@@ -59,7 +58,7 @@ export function UpgradeModal({ open, onOpenChange }: UpgradeModalProps) {
 
     try {
       const planId = getPlanId(plan.name);
-      const billingInterval = isAnnual ? "annual" : "monthly";
+      const billingInterval = "monthly"; // Only monthly billing for MVP
 
       // Create Razorpay order
       const orderData = await createRazorpayOrder({
@@ -76,7 +75,7 @@ export function UpgradeModal({ open, onOpenChange }: UpgradeModalProps) {
         orderId: orderData.orderId,
         amount: orderData.amount,
         currency: orderData.currency,
-        planName: `${plan.name} - ${billingInterval === "annual" ? "Annual" : "Monthly"}`,
+        planName: `${plan.name} - Monthly`,
         userEmail,
         userName,
         onSuccess: async (response: any) => {
@@ -133,10 +132,8 @@ export function UpgradeModal({ open, onOpenChange }: UpgradeModalProps) {
   const plans = [
     {
       name: "Individual",
-      price: isAnnual ? "$7.40" : "$9",
-      originalPrice: isAnnual ? "$108" : "$9",
+      price: "$9.99",
       period: "per month",
-      annualPrice: "$89",
       description: "For dedicated health enthusiasts.",
       features: [
         "50 Meal Plans / Month",
@@ -152,15 +149,13 @@ export function UpgradeModal({ open, onOpenChange }: UpgradeModalProps) {
         "No Watermarks",
       ],
       limitations: [],
-      cta: "Start 7-Day Trial",
+      cta: "Choose Individual",
       popular: true,
     },
     {
       name: "Family",
-      price: isAnnual ? "$15.75" : "$19",
-      originalPrice: isAnnual ? "$228" : "$19",
+      price: "$14.99",
       period: "per month",
-      annualPrice: "$179",
       description: "Healthy habits for the whole house.",
       features: [
         "Everything in Individual",
@@ -202,32 +197,6 @@ export function UpgradeModal({ open, onOpenChange }: UpgradeModalProps) {
 
         {/* Billing Toggle */}
         <div className="flex items-center justify-center gap-4 mb-8">
-          <span className={cn("text-sm font-bold", !isAnnual && "text-white")}>
-            Monthly
-          </span>
-          <button
-            type="button"
-            onClick={() => setIsAnnual(!isAnnual)}
-            className={cn(
-              "relative inline-flex h-8 w-16 items-center rounded-full transition-colors",
-              isAnnual ? "bg-primary" : "bg-gray-700"
-            )}
-          >
-            <span
-              className={cn(
-                "inline-block h-6 w-6 transform rounded-full bg-white transition-transform",
-                isAnnual ? "translate-x-9" : "translate-x-1"
-              )}
-            />
-          </button>
-          <div className="flex items-center gap-2">
-            <span className={cn("text-sm font-bold", isAnnual && "text-white")}>
-              Annual
-            </span>
-            <span className="bg-primary/20 text-primary text-xs font-bold px-2 py-1 rounded">
-              Save ~20%
-            </span>
-          </div>
         </div>
 
         {/* Plan Cards */}
@@ -261,16 +230,6 @@ export function UpgradeModal({ open, onOpenChange }: UpgradeModalProps) {
                     </span>
                     <span className="text-gray-400">{plan.period}</span>
                   </div>
-                  {isAnnual && (
-                    <p className="text-sm text-gray-500 mt-1 line-through">
-                      {plan.originalPrice}/month
-                    </p>
-                  )}
-                  {isAnnual && (
-                    <p className="text-xs text-gray-400 mt-1">
-                      Billed annually ({plan.annualPrice}/year)
-                    </p>
-                  )}
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -309,7 +268,7 @@ export function UpgradeModal({ open, onOpenChange }: UpgradeModalProps) {
         </div>
 
         <div className="text-center mt-6 text-xs text-gray-500">
-          <p>All plans include a 7-day free trial. Cancel anytime.</p>
+          <p>Cancel anytime. No long-term commitment required.</p>
         </div>
       </DialogContent>
     </Dialog>

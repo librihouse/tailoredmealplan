@@ -90,6 +90,7 @@ export default function Onboarding() {
       currency: "USD"
     };
   });
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   // Auto-save progress to localStorage
   useEffect(() => {
@@ -706,6 +707,30 @@ export default function Onboarding() {
                     <p className="font-bold text-white mb-2">Note:</p>
                     <p>The detailed questionnaire (health goals, activity level, dietary restrictions, allergies, etc.) will be asked when you generate your first meal plan. This ensures we have the most up-to-date information for creating your personalized meal plan.</p>
                   </div>
+
+                  {/* Terms Acceptance */}
+                  <div className="p-4 bg-yellow-900/20 border-l-4 border-yellow-500 rounded">
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={termsAccepted}
+                        onChange={(e) => setTermsAccepted(e.target.checked)}
+                        className="mt-1 w-4 h-4 text-primary bg-gray-900 border-gray-600 rounded focus:ring-primary focus:ring-2"
+                        required
+                      />
+                      <div className="text-sm text-yellow-300">
+                        <p className="mb-2">
+                          <strong className="text-yellow-400">I acknowledge and agree:</strong>
+                        </p>
+                        <ul className="list-disc pl-5 space-y-1 text-yellow-300/90">
+                          <li>Meal plans are AI-generated and may contain inaccuracies</li>
+                          <li>I will verify all ingredients, nutritional information, and allergens</li>
+                          <li>I will consult healthcare professionals before making significant dietary changes</li>
+                          <li>I have read and agree to the <Link href="/terms" className="text-yellow-400 underline">Terms of Service</Link> and <Link href="/privacy" className="text-yellow-400 underline">Privacy Policy</Link></li>
+                        </ul>
+                      </div>
+                    </label>
+                  </div>
                 </div>
               </div>
             )}
@@ -720,8 +745,8 @@ export default function Onboarding() {
              
              <Button 
                onClick={step === totalSteps ? handleComplete : nextStep}
-               disabled={saving}
-               className="bg-primary hover:bg-primary/90 text-black px-10 h-12 font-bold uppercase tracking-widest rounded-none"
+               disabled={saving || (step === totalSteps && !termsAccepted)}
+               className="bg-primary hover:bg-primary/90 text-black px-10 h-12 font-bold uppercase tracking-widest rounded-none disabled:opacity-50 disabled:cursor-not-allowed"
              >
                {saving ? (
                  <>

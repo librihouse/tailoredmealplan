@@ -34,7 +34,7 @@ export async function apiRequest<T>(
 
   // Create an AbortController for timeout
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minutes timeout for meal plan generation (weekly/monthly plans need more time)
+  const timeoutId = setTimeout(() => controller.abort(), 600000); // 10 minutes timeout for meal plan generation (monthly plans with chunked generation need 9+ minutes)
 
   let response: Response;
   try {
@@ -66,7 +66,7 @@ export async function apiRequest<T>(
           console.log("Session refreshed, retrying request...");
           // Retry the request with the new token (with timeout)
           const retryController = new AbortController();
-          const retryTimeoutId = setTimeout(() => retryController.abort(), 300000);
+          const retryTimeoutId = setTimeout(() => retryController.abort(), 600000); // 10 minutes to match backend timeout
           
           let retryResponse: Response;
           try {

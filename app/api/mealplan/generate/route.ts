@@ -3,8 +3,8 @@
  * Generate a meal plan with quota checking
  */
 
-// Allow up to 120 seconds for meal plan generation (monthly plans + retries)
-export const maxDuration = 300; // 5 minutes to accommodate weekly/monthly plans with larger token limits
+// Allow up to 600 seconds for meal plan generation (monthly plans + retries)
+export const maxDuration = 600; // 10 minutes to accommodate monthly plans with chunked generation (3 chunks × 2.5min = 7.5min + overhead)
 
 import { NextRequest, NextResponse } from "next/server";
 import { checkQuota, incrementUsage, getQuotaInfo, QuotaExceededError, type PlanType } from "@/server/quota-supabase";
@@ -86,6 +86,35 @@ export async function POST(request: NextRequest) {
         { error: "Invalid planType. Must be 'daily', 'weekly', or 'monthly'" },
         { status: 400 }
       );
+    }
+
+    // Block monthly plan generation for free tier users
+    if (planType === "monthly") {
+      const dbClient = getSupabaseClient();
+      if (dbClient) {
+        // Check user's subscription to determine plan type
+        const { data: subscriptions } = await dbClient
+          .from("subscriptions")
+          .select("plan_id")
+          .eq("user_id", userId)
+          .eq("status", "active")
+          .limit(1);
+        
+        // If no active subscription, user is on free tier
+        const userPlanId = subscriptions && subscriptions.length > 0 
+          ? subscriptions[0].plan_id 
+          : "free";
+        
+        if (userPlanId === "free") {
+          return NextResponse.json(
+            {
+              error: "Monthly meal plans are only available for Individual and Family plans. Please upgrade to access this feature.",
+              code: "FEATURE_LOCKED",
+            },
+            { status: 403 }
+          );
+        }
+      }
     }
 
     // Check quota BEFORE calling OpenAI
@@ -224,6 +253,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate meal plan using OpenAI with retry logic and quality validation
+    const apiRouteStartTime = Date.now();
+    // #region agent log - Hypothesis D: API route start
+    fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:227',message:'API route starting generation',data:{planType,maxDuration,apiRouteStartTime},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D'})}).catch(()=>{});
+    // #endregion
     let mealPlanResult;
     try {
       mealPlanResult = await retryGeneration({
@@ -235,6 +268,10 @@ export async function POST(request: NextRequest) {
         },
       }, 3); // Max 3 retries
     } catch (openaiError: any) {
+      const apiRouteElapsed = Date.now() - apiRouteStartTime;
+      // #region agent log - Hypothesis D,E: API route error
+      fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'route.ts:238',message:'API route caught error',data:{errorMessage:openaiError.message,apiRouteElapsed,maxDuration,maxDurationMs:maxDuration*1000,planType,isTimeout:openaiError.message?.includes('timeout')},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D,E'})}).catch(()=>{});
+      // #endregion
       log(`OpenAI error: ${openaiError.message}`, "mealplan");
       
       if (openaiError.message.includes("rate limit")) {

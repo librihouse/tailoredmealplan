@@ -259,6 +259,11 @@ export async function retryGeneration(
 ): Promise<{ mealPlan: MealPlanResponse; usage: any }> {
   let lastError: any = null;
   const trackedErrors: string[] = previousErrors || [];
+  
+  // Calculate timeout budget based on plan type
+  const duration = request.options?.duration || (request.planType === "monthly" ? 30 : request.planType === "weekly" ? 7 : 1);
+  const timeoutMs = duration === 30 ? 600000 : duration === 7 ? 180000 : 120000; // 10min monthly (chunked), 3min weekly, 2min daily
+  const startTime = Date.now();
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
@@ -303,9 +308,21 @@ export async function retryGeneration(
           };
         }
         
-        // Otherwise, retry
+        // Otherwise, retry (check timeout budget first)
+        const elapsedTime = Date.now() - startTime;
+        const remainingTimeout = timeoutMs - elapsedTime;
+        
+        // Don't retry if less than 30 seconds remaining
+        if (remainingTimeout < 30000) {
+          const { log } = await import("../index");
+          log(`Insufficient timeout budget for validation retry (${remainingTimeout}ms remaining)`, "quality-assurance");
+          throw new Error(`Validation failed: ${validation.errors.map(e => e.message).join(', ')}`);
+        }
+        
         lastError = new Error(`Validation failed: ${validation.errors.map(e => e.message).join(', ')}`);
-        await delay(Math.pow(2, attempt) * 1000); // Exponential backoff
+        const baseDelay = Math.pow(2, attempt) * 1000; // Exponential backoff
+        const safeDelayMs = Math.min(baseDelay, remainingTimeout - 10000); // Leave 10s buffer
+        await delay(safeDelayMs);
         continue;
       }
 
@@ -323,11 +340,31 @@ export async function retryGeneration(
         throw error;
       }
 
+      // Calculate remaining timeout budget before retrying
+      const elapsedTime = Date.now() - startTime;
+      const remainingTimeout = timeoutMs - elapsedTime;
+      
+      // Don't retry if less than 30 seconds remaining
+      if (remainingTimeout < 30000) {
+        const { log } = await import("../index");
+        log(`Insufficient timeout budget for retry (${remainingTimeout}ms remaining, attempt ${attempt + 1}/${maxRetries + 1})`, "quality-assurance");
+        throw error;
+      }
+
       // Wait before retrying (exponential backoff with jitter)
       const baseDelay = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s, etc.
       const jitter = Math.random() * 1000; // Add random jitter (0-1s) to prevent thundering herd
       const delayMs = baseDelay + jitter;
-      await delay(delayMs);
+      
+      // Ensure delay doesn't exceed remaining timeout budget
+      const safeDelayMs = Math.min(delayMs, remainingTimeout - 10000); // Leave 10s buffer
+      if (safeDelayMs < 1000) {
+        const { log } = await import("../index");
+        log(`Insufficient time for retry delay (${safeDelayMs}ms remaining)`, "quality-assurance");
+        throw error;
+      }
+      
+      await delay(safeDelayMs);
     }
   }
 

@@ -112,11 +112,11 @@ export function getPlan(planId: PlanId): Plan {
 }
 
 /**
- * Get price for a plan based on billing interval
+ * Get price for a plan (monthly only for MVP)
  */
-export function getPlanPrice(planId: PlanId, interval: BillingInterval): number {
+export function getPlanPrice(planId: PlanId, interval: BillingInterval = "monthly"): number {
   const plan = getPlan(planId);
-  return interval === "annual" ? plan.price.annual : plan.price.monthly;
+  return plan.price.monthly; // Only monthly billing for MVP
 }
 
 /**

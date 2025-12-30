@@ -16,7 +16,6 @@ import { openRazorpayCheckout } from "@/lib/razorpay";
 import { Spinner } from "@/components/ui/spinner";
 
 export default function Pricing() {
-  const [isAnnual, setIsAnnual] = useState(false);
   const { isAuthenticated, user } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -65,7 +64,7 @@ export default function Pricing() {
 
     try {
       const planId = getPlanId(plan.name);
-      const billingInterval = isAnnual ? "annual" : "monthly";
+      const billingInterval = "monthly"; // Only monthly billing for MVP
 
       // Create Razorpay order
       const orderData = await createRazorpayOrder({
@@ -82,7 +81,7 @@ export default function Pricing() {
         orderId: orderData.orderId,
         amount: orderData.amount,
         currency: orderData.currency,
-        planName: `${plan.name} - ${billingInterval === "annual" ? "Annual" : "Monthly"}`,
+        planName: `${plan.name} - Monthly`,
         userEmail,
         userName,
         onSuccess: async (response: any) => {
@@ -137,7 +136,7 @@ export default function Pricing() {
   interface MealPlanOptions {
     daily: { count: number; credits: number };
     weekly: { count: number; credits: number };
-    monthly: { count: number; credits: number };
+    monthly?: { count: number; credits: number };
   }
 
   interface PlanCard {
@@ -161,7 +160,6 @@ export default function Pricing() {
       mealPlanOptions: {
         daily: { count: 1, credits: 1 },
         weekly: { count: 1, credits: 2 },
-        monthly: { count: 1, credits: 4 },
       },
       features: [
         "Basic Questionnaire",
@@ -179,7 +177,7 @@ export default function Pricing() {
     },
     {
       name: "Individual",
-      price: isAnnual ? "$7.40" : "$9.99",
+      price: "$9.99",
       period: "per month",
       description: "Comprehensive nutrition planning for dedicated health enthusiasts.",
       mealPlanOptions: {
@@ -196,12 +194,12 @@ export default function Pricing() {
         "No Watermarks"
       ],
       limitations: [],
-      cta: "Start 7-Day Trial",
+      cta: "Choose Individual",
       popular: true
     },
     {
       name: "Family",
-      price: isAnnual ? "$12.99" : "$14.99",
+      price: "$14.99",
       period: "per month",
       description: "Perfect for families with up to 5 members. Each member gets 30 daily plans, 4 weekly plans, and 1 monthly plan per month.",
       mealPlanOptions: {
@@ -248,28 +246,6 @@ export default function Pricing() {
             <p className="text-xl text-gray-400 mb-8">
               Choose the plan that fits your needs. Cancel anytime.
             </p>
-
-            {/* Annual Toggle */}
-            <div className="flex items-center justify-center gap-4">
-              <span className={cn("text-sm font-medium", !isAnnual ? "text-white" : "text-gray-400")}>Monthly</span>
-              <button 
-                onClick={() => setIsAnnual(!isAnnual)}
-                className={cn(
-                  "relative w-12 h-6 rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-black",
-                  isAnnual ? "bg-primary" : "bg-gray-700"
-                )}
-              >
-                <span 
-                  className={cn(
-                    "absolute left-1 top-1 w-4 h-4 bg-white rounded-full transition-transform duration-200 ease-in-out shadow-sm",
-                    isAnnual ? "translate-x-6" : "translate-x-0"
-                  )} 
-                />
-              </button>
-              <span className={cn("text-sm font-medium flex items-center gap-2", isAnnual ? "text-white" : "text-gray-400")}>
-                Annual <span className="text-xs text-primary font-bold bg-primary/20 px-2 py-0.5 rounded-full border border-primary/30">Save ~20%</span>
-              </span>
-            </div>
           </motion.div>
 
           <div className="grid gap-8 md:grid-cols-3 max-w-6xl mx-auto">
@@ -308,7 +284,10 @@ export default function Pricing() {
                       <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-4">
                         What You Can Create
                       </h3>
-                      <div className="grid grid-cols-3 gap-3">
+                      <div className={cn(
+                        "grid gap-3",
+                        plan.mealPlanOptions.monthly ? "grid-cols-3" : "grid-cols-2"
+                      )}>
                         {/* Daily Plans */}
                         <div className="bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-500/30 rounded-lg p-3 text-center">
                           <div className="text-2xl mb-1">📅</div>
@@ -331,17 +310,19 @@ export default function Pricing() {
                             {plan.mealPlanOptions.weekly.credits} credit{plan.mealPlanOptions.weekly.credits > 1 ? 's' : ''}
                           </div>
                         </div>
-                        {/* Monthly Plans */}
-                        <div className="bg-gradient-to-br from-purple-500/20 to-purple-600/10 border border-purple-500/30 rounded-lg p-3 text-center">
-                          <div className="text-2xl mb-1">📅</div>
-                          <div className="text-xl font-bold text-white mb-1">
-                            {plan.mealPlanOptions.monthly.count}
+                        {/* Monthly Plans - Only show for paid plans */}
+                        {plan.mealPlanOptions.monthly && (
+                          <div className="bg-gradient-to-br from-purple-500/20 to-purple-600/10 border border-purple-500/30 rounded-lg p-3 text-center">
+                            <div className="text-2xl mb-1">📅</div>
+                            <div className="text-xl font-bold text-white mb-1">
+                              {plan.mealPlanOptions.monthly.count}
+                            </div>
+                            <div className="text-xs text-gray-300 mb-1">Monthly Plans</div>
+                            <div className="text-xs text-primary font-medium">
+                              {plan.mealPlanOptions.monthly.credits} credit{plan.mealPlanOptions.monthly.credits > 1 ? 's' : ''}
+                            </div>
                           </div>
-                          <div className="text-xs text-gray-300 mb-1">Monthly Plans</div>
-                          <div className="text-xs text-primary font-medium">
-                            {plan.mealPlanOptions.monthly.credits} credit{plan.mealPlanOptions.monthly.credits > 1 ? 's' : ''}
-                          </div>
-                        </div>
+                        )}
                       </div>
                       <p className="text-xs text-gray-400 text-center mt-3">
                         Mix and match any combination
@@ -405,7 +386,7 @@ export default function Pricing() {
                </div>
                <div className="bg-gray-900/50 border border-white/10 p-6 rounded-lg backdrop-blur">
                  <h4 className="font-bold mb-2 flex items-center gap-2 text-white"><HelpCircle className="h-4 w-4 text-primary"/> Do you offer refunds?</h4>
-                 <p className="text-gray-400 text-sm">We offer a 7-day money-back guarantee for all paid plans if you're not satisfied.</p>
+                 <p className="text-gray-400 text-sm">We offer a money-back guarantee for all paid plans if you're not satisfied. Contact support for details.</p>
                </div>
                <div className="bg-gray-900/50 border border-white/10 p-6 rounded-lg backdrop-blur">
                  <h4 className="font-bold mb-2 flex items-center gap-2 text-white"><HelpCircle className="h-4 w-4 text-primary"/> Can I mix different plan types?</h4>

@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     const { userId } = authResult;
 
     const body = await request.json();
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, planId, billingInterval } = body;
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, planId } = body;
 
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return NextResponse.json(
@@ -25,6 +25,9 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Only monthly billing for MVP
+    const billingInterval = "monthly";
 
     // Verify signature
     const isValid = verifyPaymentSignature({
@@ -51,11 +54,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Calculate billing period dates
+    // Calculate billing period dates (30 days for monthly billing)
     const now = new Date();
-    const periodEnd = billingInterval === "annual"
-      ? new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000)
-      : new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
     // Update or create subscription in database
     if (!supabaseAdmin) {

@@ -14,7 +14,7 @@ import { Slider } from "@/components/ui/slider";
 import { ArrowLeft, Loader2, Sparkles } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { generateMealPlan, getQuota, getUserProfile, getFamilyMembers } from "@/lib/api";
+import { generateMealPlan, getQuota, getUserProfile, getFamilyMembers, getSubscriptionStatus } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
@@ -403,8 +403,30 @@ export default function CreatePlanPage() {
     enabled: !!user,
   });
 
+  // Fetch subscription status to check plan type
+  const { data: subscriptionData } = useQuery({
+    queryKey: ["subscription"],
+    queryFn: getSubscriptionStatus,
+    enabled: !!user,
+  });
+
   // Check if user has family plan
   const isFamilyPlan = familyData?.members && familyData.members.length > 0;
+
+  // Block monthly plan access for free tier users
+  useEffect(() => {
+    if (planType === "monthly" && subscriptionData !== undefined) {
+      const planId = subscriptionData?.subscription?.planId || "free";
+      if (planId === "free") {
+        toast({
+          title: "Monthly Plans Locked",
+          description: "Monthly meal plans are only available for Individual and Family plans. Please upgrade to access this feature.",
+          variant: "destructive",
+        });
+        router.push("/dashboard");
+      }
+    }
+  }, [planType, subscriptionData, router, toast]);
 
   // Get credits required for this plan type
   const creditsRequired = getCreditsRequired(planType);

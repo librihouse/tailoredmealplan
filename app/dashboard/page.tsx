@@ -441,8 +441,15 @@ function DashboardContent() {
             <TabsTrigger value="weekly" className="data-[state=active]:bg-primary data-[state=active]:text-black">
               Weekly
             </TabsTrigger>
-            <TabsTrigger value="monthly" className="data-[state=active]:bg-primary data-[state=active]:text-black">
-              Monthly
+            <TabsTrigger 
+              value="monthly" 
+              className={cn(
+                "data-[state=active]:bg-primary data-[state=active]:text-black",
+                planId === "free" && "opacity-50 cursor-not-allowed"
+              )}
+              disabled={planId === "free"}
+            >
+              Monthly {planId === "free" && "🔒"}
             </TabsTrigger>
           </TabsList>
 
@@ -566,45 +573,35 @@ function DashboardContent() {
 
           {/* Monthly Tab */}
           <TabsContent value="monthly" className="space-y-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-heading text-2xl font-bold uppercase">Monthly Meal Plans</h2>
-              {displayCredits.limit - displayCredits.used >= 4 ? (
-                <Link href="/dashboard/create/monthly">
-                  <Button className="bg-primary hover:bg-primary/90 text-black font-bold uppercase">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Monthly Plan
-                  </Button>
-                </Link>
-              ) : (
-                <Button 
-                  className="bg-gray-700 text-gray-400 cursor-not-allowed"
-                  disabled
-                  onClick={() => setUpgradeModalOpen(true)}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create Monthly Plan (No Credits)
-                </Button>
-              )}
-            </div>
-
-            {plansLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <Spinner className="h-8 w-8 text-primary" />
-              </div>
-            ) : plansData && plansData.plans.length > 0 ? (
-              renderPlansWithExpiration(plansData.plans)
-            ) : (
-              <Card className="bg-gray-900/50 border-white/10 border-dashed">
+            {planId === "free" ? (
+              // Locked state for free tier
+              <Card className="bg-gray-900/50 border-primary/30 border-2">
                 <CardContent className="p-12 text-center">
-                  <FileText className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-                  <h3 className="font-heading text-xl font-bold text-white mb-2">No monthly plans yet</h3>
-                  <p className="text-gray-400 mb-6">
-                    Create your first monthly meal plan to get started!
+                  <div className="text-6xl mb-6">🔒</div>
+                  <h3 className="font-heading text-2xl font-bold text-white mb-4">Monthly Plans Locked</h3>
+                  <p className="text-gray-300 mb-2 text-lg">
+                    Monthly meal plans are available for Individual and Family plans.
                   </p>
+                  <p className="text-gray-400 mb-8">
+                    Upgrade to unlock comprehensive 30-day meal planning with advanced features.
+                  </p>
+                  <Link href="/pricing">
+                    <Button className="bg-primary hover:bg-primary/90 text-black font-bold uppercase text-lg px-8 py-6">
+                      Upgrade to Unlock
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            ) : (
+              // Normal monthly tab content for paid users
+              <>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="font-heading text-2xl font-bold uppercase">Monthly Meal Plans</h2>
                   {displayCredits.limit - displayCredits.used >= 4 ? (
                     <Link href="/dashboard/create/monthly">
-                      <Button className="bg-primary hover:bg-primary/90 text-black font-bold">
-                        <Plus className="mr-2 h-5 w-5" />
+                      <Button className="bg-primary hover:bg-primary/90 text-black font-bold uppercase">
+                        <Plus className="mr-2 h-4 w-4" />
                         Create Monthly Plan
                       </Button>
                     </Link>
@@ -614,12 +611,47 @@ function DashboardContent() {
                       disabled
                       onClick={() => setUpgradeModalOpen(true)}
                     >
-                      <Plus className="mr-2 h-5 w-5" />
+                      <Plus className="mr-2 h-4 w-4" />
                       Create Monthly Plan (No Credits)
                     </Button>
                   )}
-                </CardContent>
-              </Card>
+                </div>
+
+                {plansLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Spinner className="h-8 w-8 text-primary" />
+                  </div>
+                ) : plansData && plansData.plans.length > 0 ? (
+                  renderPlansWithExpiration(plansData.plans)
+                ) : (
+                  <Card className="bg-gray-900/50 border-white/10 border-dashed">
+                    <CardContent className="p-12 text-center">
+                      <FileText className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+                      <h3 className="font-heading text-xl font-bold text-white mb-2">No monthly plans yet</h3>
+                      <p className="text-gray-400 mb-6">
+                        Create your first monthly meal plan to get started!
+                      </p>
+                      {displayCredits.limit - displayCredits.used >= 4 ? (
+                        <Link href="/dashboard/create/monthly">
+                          <Button className="bg-primary hover:bg-primary/90 text-black font-bold">
+                            <Plus className="mr-2 h-5 w-5" />
+                            Create Monthly Plan
+                          </Button>
+                        </Link>
+                      ) : (
+                        <Button 
+                          className="bg-gray-700 text-gray-400 cursor-not-allowed"
+                          disabled
+                          onClick={() => setUpgradeModalOpen(true)}
+                        >
+                          <Plus className="mr-2 h-5 w-5" />
+                          Create Monthly Plan (No Credits)
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+              </>
             )}
           </TabsContent>
         </Tabs>

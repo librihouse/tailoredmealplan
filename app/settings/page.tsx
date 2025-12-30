@@ -50,22 +50,19 @@ export default function Settings() {
   };
 
   const formatPrice = (planId: string, interval: string) => {
-    const prices: Record<string, { monthly: number; annual: number }> = {
-      individual: { monthly: 9, annual: 89 },
-      family: { monthly: 19, annual: 189 },
-      starter: { monthly: 29, annual: 288 },
-      growth: { monthly: 49, annual: 468 },
-      professional: { monthly: 99, annual: 948 },
-      enterprise: { monthly: 199, annual: 1908 },
+    const prices: Record<string, number> = {
+      individual: 9.99,
+      family: 14.99,
+      starter: 29,
+      growth: 49,
+      professional: 99,
+      enterprise: 199,
     };
 
     const basePlan = planId.split("_")[0];
-    const isAnnual = interval === "annual";
-    const price = prices[basePlan]?.[isAnnual ? "annual" : "monthly"] || 0;
+    const price = prices[basePlan] || 0;
     
-    if (isAnnual) {
-      return `$${price}/year`;
-    }
+    // Only monthly billing for MVP
     return `$${price}/month`;
   };
 

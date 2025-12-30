@@ -215,6 +215,16 @@ function MealPlanViewContent({ params }: { params: Promise<{ id: string }> }) {
   return (
     <div className="bg-black text-white min-h-screen py-8">
       <div className="container max-w-screen-2xl px-4 md:px-8">
+        {/* AI Disclaimer Banner */}
+        <div className="mb-6 bg-yellow-900/20 border-l-4 border-yellow-500 p-4 rounded">
+          <p className="text-yellow-300 text-sm">
+            <strong className="text-yellow-400">AI-Generated Content Notice:</strong> This meal plan is generated using artificial intelligence. 
+            AI-generated content may contain inaccuracies. Please verify all ingredients, nutritional information, and allergens. 
+            Consult with a healthcare professional before making significant dietary changes. 
+            <Link href="/terms" className="text-yellow-400 underline ml-1">View Terms of Service</Link>
+          </p>
+        </div>
+
         {/* Header */}
         <div className="mb-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">

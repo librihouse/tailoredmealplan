@@ -54,10 +54,15 @@ export function Hero() {
       {/* Scrolling Ticker */}
       <div className="absolute bottom-0 w-full border-t border-white/10 bg-black/80 backdrop-blur-md py-4 overflow-hidden z-20">
         <div className="flex whitespace-nowrap animate-infinite-scroll">
-          {[...Array(10)].map((_, i) => (
-            <div key={i} className="flex items-center mx-8">
-              <span className="text-primary font-bold mx-4">★</span>
-              <span className="text-sm font-bold tracking-[0.2em] text-white/70">CULTURE • SCIENCE • PERFORMANCE • TASTE •</span>
+          {/* Duplicate content for seamless infinite scroll */}
+          {[...Array(2)].map((_, setIndex) => (
+            <div key={setIndex} className="flex shrink-0">
+              {[...Array(4)].map((_, i) => (
+                <div key={`${setIndex}-${i}`} className="flex items-center mx-4 md:mx-8 shrink-0">
+                  <span className="text-primary font-bold mx-2 md:mx-4">★</span>
+                  <span className="text-xs md:text-sm font-bold tracking-[0.2em] text-white/70">CULTURE • SCIENCE • PERFORMANCE • TASTE •</span>
+                </div>
+              ))}
             </div>
           ))}
         </div>

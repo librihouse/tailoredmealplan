@@ -140,3 +140,30 @@ body > div[style*="background: red"],
 body > div[style*="background-color: red"] {
   display: none !important;
 }
+
+/* Infinite Scrolling Marquee */
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-infinite-scroll {
+  animation: scroll 40s linear infinite;
+  display: flex;
+  will-change: transform;
+}
+
+.animate-infinite-scroll:hover {
+  animation-play-state: paused;
+}
+
+/* Ensure smooth scrolling on mobile */
+@media (max-width: 768px) {
+  .animate-infinite-scroll {
+    animation-duration: 25s;
+  }
+}
