@@ -302,7 +302,7 @@ export default function GeneratingPage() {
                     <p className="text-sm text-primary font-medium">
                       ⏱️ Estimated time:{" "}
                       {planType === "monthly" 
-                        ? "7-10 minutes" 
+                        ? "3-5 minutes" 
                         : planType === "weekly" 
                         ? "2-3 minutes" 
                         : "1-2 minutes"}

@@ -262,7 +262,7 @@ export async function retryGeneration(
   
   // Calculate timeout budget based on plan type
   const duration = request.options?.duration || (request.planType === "monthly" ? 30 : request.planType === "weekly" ? 7 : 1);
-  const timeoutMs = duration === 30 ? 600000 : duration === 7 ? 180000 : 120000; // 10min monthly (chunked), 3min weekly, 2min daily
+  const timeoutMs = duration === 30 ? 300000 : duration === 7 ? 180000 : 120000; // 5min monthly (Vercel limit), 3min weekly, 2min daily
   const startTime = Date.now();
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {

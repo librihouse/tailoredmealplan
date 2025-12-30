@@ -33,7 +33,7 @@ function getOpenAIClient(timeoutMs?: number): OpenAI {
     // Create client without timeout - our custom timeout promise will handle it
     return new OpenAI({
       apiKey,
-      timeout: 600000, // Set to 10 minutes to avoid SDK limits, but our custom timeout will fire first
+      timeout: 300000, // 5 minutes - maximum allowed on Vercel hobby plan
       maxRetries: 0, // We handle retries in quality-assurance.ts
     });
   }
@@ -967,8 +967,8 @@ async function generateMonthlyPlanInChunks(
 ): Promise<{ mealPlan: MealPlanResponse; usage: { promptTokens: number; completionTokens: number; totalTokens: number } }> {
   log("Generating monthly plan in 3 chunks (days 1-10, 11-20, 21-30) to avoid timeout", "openai");
   
-  // Total timeout budget: 10 minutes (600000ms) for all chunks + merge + validation
-  const totalTimeoutMs = 600000;
+  // Total timeout budget: 5 minutes (300000ms) for all chunks + merge + validation - Vercel hobby plan limit
+  const totalTimeoutMs = 300000;
   const startTime = Date.now();
   
   const chunks = [
@@ -1281,7 +1281,7 @@ export async function generateMealPlan(
     // #region agent log - Hypothesis A,B: Duration check and timeout calculation
     fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'openai.ts:899',message:'Timeout calculation start',data:{planType:request.planType,duration,durationCheck30:duration===30,durationCheck7:duration===7,optionsDuration:request.options?.duration},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A,B'})}).catch(()=>{});
     // #endregion
-    timeoutMs = duration === 30 ? 600000 : duration === 7 ? 180000 : 120000; // 10min monthly (chunked), 3min weekly, 2min daily
+    timeoutMs = duration === 30 ? 300000 : duration === 7 ? 180000 : 120000; // 5min monthly (Vercel limit), 3min weekly, 2min daily
     // #region agent log - Hypothesis A,B: Calculated timeout value
     fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'openai.ts:900',message:'Timeout calculated',data:{timeoutMs,timeoutSeconds:timeoutMs/1000,isMonthly:duration===30,isWeekly:duration===7,isDaily:duration===1},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A,B'})}).catch(()=>{});
     // #endregion

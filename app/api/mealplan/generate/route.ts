@@ -4,7 +4,7 @@
  */
 
 // Allow up to 600 seconds for meal plan generation (monthly plans + retries)
-export const maxDuration = 600; // 10 minutes to accommodate monthly plans with chunked generation (3 chunks × 2.5min = 7.5min + overhead)
+export const maxDuration = 300; // 5 minutes - maximum allowed on Vercel hobby plan
 
 import { NextRequest, NextResponse } from "next/server";
 import { checkQuota, incrementUsage, getQuotaInfo, QuotaExceededError, type PlanType } from "@/server/quota-supabase";
