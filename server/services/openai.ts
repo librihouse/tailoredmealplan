@@ -1229,6 +1229,7 @@ export async function generateMealPlan(
   let usage: { promptTokens: number; completionTokens: number; totalTokens: number } | null = null;
   let parseStartTime = Date.now();
   let isChunked = false;
+  let startTime: number | undefined = undefined; // Track start time for error handling
 
   if (duration === 30 && request.planType === "monthly") {
     log("Routing monthly plan to chunking strategy", "openai");
@@ -2192,7 +2193,7 @@ export async function generateMealPlan(
     // Also check for AbortError which indicates our custom timeout fired
     if (error.message?.includes("timeout") || error.message?.includes("Timeout") || 
         error.message?.includes("taking longer than expected") || error.name === "AbortError") {
-      const elapsedTime = Date.now() - startTime;
+      const elapsedTime = startTime ? Date.now() - startTime : 0;
       // #region agent log - Hypothesis C,D,E: Timeout error occurred
       fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'openai.ts:1710',message:'Timeout error caught',data:{errorMessage:error.message,elapsedTime,timeoutMs,expectedTimeout:timeoutMs,planType:request.planType,has300000:error.message?.includes("300000"),has5minutes:error.message?.includes("5 minutes"),has300seconds:error.message?.includes("300 seconds")},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C,D,E'})}).catch(()=>{});
       // #endregion
