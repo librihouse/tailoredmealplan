@@ -132,7 +132,7 @@ export function UpgradeModal({ open, onOpenChange }: UpgradeModalProps) {
   const plans = [
     {
       name: "Individual",
-      price: "$9.99",
+      price: "$7.99",
       period: "per month",
       description: "For dedicated health enthusiasts.",
       features: [
@@ -154,7 +154,7 @@ export function UpgradeModal({ open, onOpenChange }: UpgradeModalProps) {
     },
     {
       name: "Family",
-      price: "$14.99",
+      price: "$12.99",
       period: "per month",
       description: "Healthy habits for the whole house.",
       features: [

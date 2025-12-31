@@ -43,7 +43,8 @@ function MealPlansContent() {
   };
 
   const getPlanTypeLabel = (type: string) => {
-    return type.charAt(0).toUpperCase() + type.slice(1);
+    const safeType = type || 'daily';
+    return safeType.charAt(0).toUpperCase() + safeType.slice(1);
   };
 
   const plans = data?.plans || [];

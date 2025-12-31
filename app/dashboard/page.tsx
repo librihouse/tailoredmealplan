@@ -1,5 +1,7 @@
 "use client";
 
+import { TestPlanSwitcher } from "@/components/TestPlanSwitcher";
+
 import { Layout } from "@/components/Layout";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { CreditCounter } from "@/components/CreditCounter";
@@ -458,12 +460,21 @@ function DashboardContent() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-heading text-2xl font-bold uppercase">Daily Meal Plans</h2>
               {displayCredits.limit - displayCredits.used >= 1 ? (
-                <Link href="/dashboard/create/daily">
-                  <Button className="bg-primary hover:bg-primary/90 text-black font-bold uppercase">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Daily Plan
-                  </Button>
-                </Link>
+                <Button 
+                  className="bg-primary hover:bg-primary/90 text-black font-bold uppercase"
+                  onClick={() => {
+                    // #region agent log - Hypothesis A,B,C,D: Dashboard button click to generate-meal-plan
+                    fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/dashboard/page.tsx:463',message:'Dashboard button clicked - navigating to generate-meal-plan',data:{planType:'daily',method:'window.location.href',currentPath:window.location.pathname},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B,C,D'})}).catch(()=>{});
+                    // #endregion
+                    // Use window.location.href for full page navigation to wouter route
+                    // This ensures we bypass Next.js routing and let the client-side router handle it
+                    const targetUrl = "/generate-meal-plan?type=daily";
+                    window.location.href = targetUrl;
+                  }}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Daily Plan
+                </Button>
               ) : (
                 <Button 
                   className="bg-gray-700 text-gray-400 cursor-not-allowed"
@@ -491,12 +502,18 @@ function DashboardContent() {
                     Create your first daily meal plan to get started!
                   </p>
                   {displayCredits.limit - displayCredits.used >= 1 ? (
-                    <Link href="/dashboard/create/daily">
-                      <Button className="bg-primary hover:bg-primary/90 text-black font-bold">
-                        <Plus className="mr-2 h-5 w-5" />
-                        Create Daily Plan
-                      </Button>
-                    </Link>
+                    <Button 
+                      className="bg-primary hover:bg-primary/90 text-black font-bold"
+                      onClick={() => {
+                        // #region agent log - Hypothesis A,B,C,D: Dashboard empty state button click
+                        fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/dashboard/page.tsx:496',message:'Dashboard empty state button clicked',data:{planType:'daily'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B,C,D'})}).catch(()=>{});
+                        // #endregion
+                        window.location.href = "/generate-meal-plan?type=daily";
+                      }}
+                    >
+                      <Plus className="mr-2 h-5 w-5" />
+                      Create Daily Plan
+                    </Button>
                   ) : (
                     <Button 
                       className="bg-gray-700 text-gray-400 cursor-not-allowed"
@@ -517,12 +534,18 @@ function DashboardContent() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-heading text-2xl font-bold uppercase">Weekly Meal Plans</h2>
               {displayCredits.limit - displayCredits.used >= 2 ? (
-                <Link href="/dashboard/create/weekly">
-                  <Button className="bg-primary hover:bg-primary/90 text-black font-bold uppercase">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Weekly Plan
-                  </Button>
-                </Link>
+                <Button 
+                  className="bg-primary hover:bg-primary/90 text-black font-bold uppercase"
+                  onClick={() => {
+                    // #region agent log - Hypothesis A,B,C,D: Dashboard weekly button click
+                    fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/dashboard/page.tsx:522',message:'Dashboard weekly button clicked',data:{planType:'weekly'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B,C,D'})}).catch(()=>{});
+                    // #endregion
+                    window.location.href = "/generate-meal-plan?type=weekly";
+                  }}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Weekly Plan
+                </Button>
               ) : (
                 <Button 
                   className="bg-gray-700 text-gray-400 cursor-not-allowed"
@@ -550,12 +573,18 @@ function DashboardContent() {
                     Create your first weekly meal plan to get started!
                   </p>
                   {displayCredits.limit - displayCredits.used >= 2 ? (
-                    <Link href="/dashboard/create/weekly">
-                      <Button className="bg-primary hover:bg-primary/90 text-black font-bold">
-                        <Plus className="mr-2 h-5 w-5" />
-                        Create Weekly Plan
-                      </Button>
-                    </Link>
+                    <Button 
+                      className="bg-primary hover:bg-primary/90 text-black font-bold"
+                      onClick={() => {
+                        // #region agent log - Hypothesis A,B,C,D: Dashboard weekly empty state button
+                        fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/dashboard/page.tsx:555',message:'Dashboard weekly empty state button clicked',data:{planType:'weekly'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B,C,D'})}).catch(()=>{});
+                        // #endregion
+                        window.location.href = "/generate-meal-plan?type=weekly";
+                      }}
+                    >
+                      <Plus className="mr-2 h-5 w-5" />
+                      Create Weekly Plan
+                    </Button>
                   ) : (
                     <Button 
                       className="bg-gray-700 text-gray-400 cursor-not-allowed"
@@ -599,12 +628,18 @@ function DashboardContent() {
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="font-heading text-2xl font-bold uppercase">Monthly Meal Plans</h2>
                   {displayCredits.limit - displayCredits.used >= 4 ? (
-                    <Link href="/dashboard/create/monthly">
-                      <Button className="bg-primary hover:bg-primary/90 text-black font-bold uppercase">
-                        <Plus className="mr-2 h-4 w-4" />
-                        Create Monthly Plan
-                      </Button>
-                    </Link>
+                    <Button 
+                      className="bg-primary hover:bg-primary/90 text-black font-bold uppercase"
+                      onClick={() => {
+                        // #region agent log - Hypothesis A,B,C,D: Dashboard monthly button click
+                        fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/dashboard/page.tsx:604',message:'Dashboard monthly button clicked',data:{planType:'monthly'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B,C,D'})}).catch(()=>{});
+                        // #endregion
+                        window.location.href = "/generate-meal-plan?type=monthly";
+                      }}
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Create Monthly Plan
+                    </Button>
                   ) : (
                     <Button 
                       className="bg-gray-700 text-gray-400 cursor-not-allowed"
@@ -632,12 +667,18 @@ function DashboardContent() {
                         Create your first monthly meal plan to get started!
                       </p>
                       {displayCredits.limit - displayCredits.used >= 4 ? (
-                        <Link href="/dashboard/create/monthly">
-                          <Button className="bg-primary hover:bg-primary/90 text-black font-bold">
-                            <Plus className="mr-2 h-5 w-5" />
-                            Create Monthly Plan
-                          </Button>
-                        </Link>
+                        <Button 
+                          className="bg-primary hover:bg-primary/90 text-black font-bold"
+                          onClick={() => {
+                            // #region agent log - Hypothesis A,B,C,D: Dashboard monthly empty state button
+                            fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/dashboard/page.tsx:637',message:'Dashboard monthly empty state button clicked',data:{planType:'monthly'},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,B,C,D'})}).catch(()=>{});
+                            // #endregion
+                            window.location.href = "/generate-meal-plan?type=monthly";
+                          }}
+                        >
+                          <Plus className="mr-2 h-5 w-5" />
+                          Create Monthly Plan
+                        </Button>
                       ) : (
                         <Button 
                           className="bg-gray-700 text-gray-400 cursor-not-allowed"
@@ -658,6 +699,9 @@ function DashboardContent() {
 
         {/* Upgrade Modal */}
         <UpgradeModal open={upgradeModalOpen} onOpenChange={setUpgradeModalOpen} />
+
+        {/* Test Plan Switcher - Only visible to test user */}
+        <TestPlanSwitcher />
       </div>
     </div>
   );

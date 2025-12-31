@@ -5,7 +5,7 @@
 
 import { Router } from "express";
 import { supabaseAdmin } from "../supabase";
-import { log } from "../index";
+import { log } from "../utils/log";
 
 const router = Router();
 

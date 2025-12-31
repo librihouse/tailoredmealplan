@@ -1,6 +1,15 @@
 /**
  * Quality Assurance Service
  * Validates meal plan structure and handles retry logic
+ * 
+ * NOTE: The new validator (meal-plan-validator.ts) is now primary and includes:
+ * - Goal-adaptive calorie distribution validation
+ * - Snack completeness validation
+ * - Unit validation (no tbsp for vegetables)
+ * - Grocery list completeness and classification
+ * - Cultural authenticity checks
+ * 
+ * This legacy validator is kept for compatibility and as a fallback.
  */
 
 import { generateMealPlan, type MealPlanRequest, type MealPlanResponse } from "./openai";

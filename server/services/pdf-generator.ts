@@ -79,6 +79,7 @@ function sanitizeText(text: any): string {
 /**
  * Check if we need a page break and add one if needed
  * Only creates a page if there's actually content to add
+ * Returns the new Y position after potential page break
  */
 function checkPageBreak(doc: any, requiredHeight: number, currentY: number, isFreeTier: boolean = false): number {
   const pageHeight = doc.page.height;
@@ -86,14 +87,36 @@ function checkPageBreak(doc: any, requiredHeight: number, currentY: number, isFr
   const availableHeight = pageHeight - currentY - bottomMargin;
   
   // Only create page break if we truly don't have enough space
-  // Add a small buffer to prevent unnecessary page breaks
-  if (availableHeight < (requiredHeight + 20)) {
-    // Add new page - background and watermark are automatically added via 'pageAdded' event
+  // Add a larger buffer (60px) to prevent text overlap and ensure proper spacing
+  // Increased buffer to prevent content from being too close to bottom
+  if (availableHeight < (requiredHeight + 60)) {
+    // Add new page - background is automatically added via 'pageAdded' event
     doc.addPage();
-    return PAGE_LAYOUT.topMargin;
+    // Reset Y position to top margin with extra spacing
+    return PAGE_LAYOUT.topMargin + 10;
   }
   
   return currentY;
+}
+
+/**
+ * Calculate actual text height for multi-line text
+ */
+function getTextHeight(doc: any, text: string, width: number, fontSize: number, lineGap: number = 4): number {
+  if (!text || text.length === 0) return 0;
+  
+  try {
+    // Use pdfkit's heightOfString method if available
+    const height = doc.heightOfString(text, {
+      width: width,
+      lineGap: lineGap,
+    });
+    return height || (fontSize * 1.2); // Fallback estimate
+  } catch (error) {
+    // Fallback: estimate based on text length and width
+    const estimatedLines = Math.ceil((text.length * fontSize * 0.6) / width);
+    return estimatedLines * (fontSize * 1.2 + lineGap);
+  }
 }
 
 /**
@@ -107,46 +130,26 @@ function addBackgroundPattern(doc: any) {
     const pageHeight = doc.page.height;
     
     // CRITICAL: Set black background FIRST - this ensures page is never white
-    doc.rect(0, 0, pageWidth, pageHeight)
-       .fillColor(THEME_COLORS.background)
-       .fill();
-    
-    // Add subtle grid pattern in primary green at low opacity
+    // Use fillRect for better performance and to ensure it's drawn first
     doc.save();
-    doc.opacity(0.05);
-    doc.strokeColor(THEME_COLORS.primary);
-    doc.lineWidth(0.5);
-    
-    // Draw subtle grid lines
-    const gridSpacing = 50;
-    for (let x = 0; x < pageWidth; x += gridSpacing) {
-      doc.moveTo(x, 0)
-         .lineTo(x, pageHeight)
-         .stroke();
-    }
-    for (let y = 0; y < pageHeight; y += gridSpacing) {
-      doc.moveTo(0, y)
-         .lineTo(pageWidth, y)
-         .stroke();
-    }
-    
-    // Add subtle diagonal pattern
-    doc.opacity(0.03);
-    for (let i = -pageHeight; i < pageWidth + pageHeight; i += 100) {
-      doc.moveTo(i, 0)
-         .lineTo(i + pageHeight, pageHeight)
-         .stroke();
-    }
-    
+    doc.fillColor(THEME_COLORS.background);
+    doc.rect(0, 0, pageWidth, pageHeight)
+       .fill();
     doc.restore();
-    doc.opacity(1.0);
+    
+    // Remove grid lines completely - they conflict with content
+    // Only keep very subtle diagonal pattern if needed (commented out for now)
+    // Grid lines were causing visual conflicts with text and charts
+    
   } catch (error: any) {
     console.warn('Warning: Could not add background pattern:', error.message);
     // Fallback to solid black background - CRITICAL to prevent white pages
     try {
+      doc.save();
+      doc.fillColor(THEME_COLORS.background);
       doc.rect(0, 0, doc.page.width, doc.page.height)
-         .fillColor(THEME_COLORS.background)
          .fill();
+      doc.restore();
     } catch (fillError: any) {
       // Last resort - try alternative method
       console.error('Failed to set background color:', fillError.message);
@@ -236,44 +239,62 @@ export async function generateMealPlanPDF(options: GeneratePDFOptions): Promise<
       // This ensures ALL pages (including auto-created ones) have black background
       doc.on('pageAdded', () => {
         addBackgroundPattern(doc);
-        if (isFreeTier) {
-          addWatermark(doc);
-        }
+        // Watermark removed - premium feature for email delivery
       });
 
       // CRITICAL: Ensure first page has background applied
       // The constructor sets the first page, but we need to ensure background is applied
       // before any content is added
       addBackgroundPattern(doc);
-      
-      // Add watermark if free tier (before other content)
-      if (isFreeTier) {
-        addWatermark(doc);
-      }
 
       // Cover page
       addCoverPage(doc, planData, planType, createdAt);
+      
+      // Nutrition overview page with charts - only add if we have valid overview data
+      const hasValidOverview = planData.overview && typeof planData.overview === 'object';
+      const hasMacros = hasValidOverview && planData.overview.macros && 
+                        (planData.overview.macros.protein || planData.overview.macros.carbs || planData.overview.macros.fat);
+      const hasDaysForChart = planData.days && Array.isArray(planData.days) && planData.days.length > 0;
+      
+      if (hasValidOverview && (hasMacros || hasDaysForChart)) {
+        doc.addPage();
+        addNutritionOverview(doc, planData, planType);
+      }
 
-      // Daily plans
+      // Daily plans - only add pages when there's actual content
       if (planData.days && Array.isArray(planData.days) && planData.days.length > 0) {
         planData.days.forEach((day, index) => {
-          // Only add new page if there's actual content
-          if (day && typeof day === 'object') {
-            doc.addPage();
-            // Background and watermark are automatically added via 'pageAdded' event
+          // Only add new page if there's actual content with meals
+          if (day && typeof day === 'object' && day.meals && Object.keys(day.meals).length > 0) {
+            // Check if we need a new page (don't add empty pages)
+            const currentY = doc.y || PAGE_LAYOUT.topMargin;
+            const pageHeight = doc.page.height;
+            const availableSpace = pageHeight - currentY - PAGE_LAYOUT.bottomMargin;
+            
+            // Only add new page if current page doesn't have enough space (need at least 200px for day header)
+            if (index > 0 && availableSpace < 200) {
+              doc.addPage();
+              // Background is automatically added via 'pageAdded' event
+            } else if (index === 0) {
+              // First day always needs a new page after nutrition overview
+              doc.addPage();
+            }
             addDayPlan(doc, day, index + 1, isFreeTier);
           }
         });
       }
 
-      // Grocery list
+      // Grocery list - check if we need a new page or can continue on current page
       if (planData.groceryList && Object.keys(planData.groceryList).length > 0) {
-        // Check if we need a new page for grocery list
-        // If last day page has enough space, continue on same page
+        // Check if current page has enough space (estimate 400px needed for grocery list)
         const hasDays = planData.days && Array.isArray(planData.days) && planData.days.length > 0;
-        if (hasDays) {
+        const currentPageY = doc.y || PAGE_LAYOUT.topMargin;
+        const availableSpace = doc.page.height - currentPageY - PAGE_LAYOUT.bottomMargin;
+        
+        // Only add new page if we don't have enough space (need at least 400px to avoid empty pages)
+        if (hasDays && availableSpace < 400) {
           doc.addPage();
-          // Background and watermark are automatically added via 'pageAdded' event
+          // Background is automatically added via 'pageAdded' event
         }
         addGroceryList(doc, planData.groceryList, isFreeTier);
       }
@@ -292,31 +313,275 @@ export async function generateMealPlanPDF(options: GeneratePDFOptions): Promise<
 }
 
 /**
- * Add watermark to page (styled with primary green)
+ * Add nutrition overview page with macro breakdown and daily calories chart (modern design)
  */
-function addWatermark(doc: any) {
-  try {
-    doc.save();
-    doc.rotate(-45, { origin: [300, 400] });
-    doc.opacity(0.12); // Slightly more visible on dark background
-    // Don't set font - use pdfkit default to avoid font file loading
-    doc.fontSize(52)
-       .fillColor(THEME_COLORS.primary) // Use primary green color
-       .text('TAILOREDMEALPLAN.COM - FREE VERSION', 0, 0, {
-         align: 'center',
-         width: 800,
-       });
-    doc.restore();
+function addNutritionOverview(doc: any, planData: MealPlanData, planType: string) {
+  const overview = planData.overview;
+  if (!overview || typeof overview !== 'object') {
+    return;
+  }
+
+  let yPos = PAGE_LAYOUT.topMargin + 20;
+
+  // Elegant page title
+  doc.fontSize(32)
+     .fillColor(THEME_COLORS.primary)
+     .text('NUTRITION OVERVIEW', PAGE_LAYOUT.margin, yPos, { align: 'center' });
+  
+  yPos += 20;
+  
+  // Accent line
+  doc.strokeColor(THEME_COLORS.primary);
+  doc.lineWidth(2);
+  doc.moveTo((doc.page.width - 300) / 2, yPos)
+     .lineTo((doc.page.width + 300) / 2, yPos)
+     .stroke();
+  
+  yPos += 50;
+
+  // Macro Breakdown Section with modern visual design
+  if (overview.macros) {
+    doc.fontSize(20)
+       .fillColor(THEME_COLORS.textPrimary)
+       .text('MACRO BREAKDOWN', PAGE_LAYOUT.margin, yPos);
+    
+    yPos += 10;
+    
+    // Subtle accent line - reduced opacity to prevent conflicts
+    doc.strokeColor(THEME_COLORS.primary);
+    doc.lineWidth(1);
+    doc.opacity(0.3); // Reduced from 0.5 to prevent visual conflicts
+    doc.moveTo(PAGE_LAYOUT.margin, yPos)
+       .lineTo(PAGE_LAYOUT.margin + 200, yPos)
+       .stroke();
     doc.opacity(1.0);
-  } catch (error: any) {
-    console.warn('Warning: Could not add watermark:', error.message);
+    
+    yPos += 35; // Increased spacing after accent line
+
+    // Calculate percentages
+    const totalMacros = (overview.macros.protein || 0) + (overview.macros.carbs || 0) + (overview.macros.fat || 0);
+    const proteinPercent = totalMacros > 0 ? ((overview.macros.protein || 0) / totalMacros) * 100 : 0;
+    const carbsPercent = totalMacros > 0 ? ((overview.macros.carbs || 0) / totalMacros) * 100 : 0;
+    const fatPercent = totalMacros > 0 ? ((overview.macros.fat || 0) / totalMacros) * 100 : 0;
+
+    // Modern macro cards with visual progress bars
+    const chartX = PAGE_LAYOUT.margin;
+    const chartY = yPos;
+    const chartWidth = doc.page.width - (PAGE_LAYOUT.margin * 2);
+    const boxHeight = 65;
+    const spacing = 20;
+
+    // Protein card with progress bar
+    doc.rect(chartX, chartY, chartWidth, boxHeight)
+       .fillAndStroke(THEME_COLORS.cardBackground, '#84cc16');
+    doc.lineWidth(3);
+    doc.rect(chartX, chartY, chartWidth, boxHeight)
+       .stroke('#84cc16');
+    
+    // Progress bar visualization
+    const progressWidth = (proteinPercent / 100) * (chartWidth - 40);
+    doc.rect(chartX + 20, chartY + boxHeight - 12, progressWidth, 8)
+       .fill('#84cc16');
+    
+    doc.fontSize(16)
+       .fillColor('#84cc16')
+       .text('PROTEIN', chartX + 25, chartY + 15);
+    doc.fontSize(28)
+       .fillColor('#84cc16')
+       .text(`${proteinPercent.toFixed(0)}%`, chartX + chartWidth - 120, chartY + 10, { width: 100, align: 'right' });
+    doc.fontSize(13)
+       .fillColor(THEME_COLORS.textSecondary)
+       .text(`${overview.macros.protein || 0}g`, chartX + 25, chartY + 40);
+
+    yPos += boxHeight + spacing;
+
+    // Carbs card with progress bar
+    doc.rect(chartX, yPos, chartWidth, boxHeight)
+       .fillAndStroke(THEME_COLORS.cardBackground, '#3b82f6');
+    doc.lineWidth(3);
+    doc.rect(chartX, yPos, chartWidth, boxHeight)
+       .stroke('#3b82f6');
+    
+    const carbsProgressWidth = (carbsPercent / 100) * (chartWidth - 40);
+    doc.rect(chartX + 20, yPos + boxHeight - 12, carbsProgressWidth, 8)
+       .fill('#3b82f6');
+    
+    doc.fontSize(16)
+       .fillColor('#3b82f6')
+       .text('CARBS', chartX + 25, yPos + 15);
+    doc.fontSize(28)
+       .fillColor('#3b82f6')
+       .text(`${carbsPercent.toFixed(0)}%`, chartX + chartWidth - 120, yPos + 10, { width: 100, align: 'right' });
+    doc.fontSize(13)
+       .fillColor(THEME_COLORS.textSecondary)
+       .text(`${overview.macros.carbs || 0}g`, chartX + 25, yPos + 40);
+
+    yPos += boxHeight + spacing;
+
+    // Fat card with progress bar
+    doc.rect(chartX, yPos, chartWidth, boxHeight)
+       .fillAndStroke(THEME_COLORS.cardBackground, '#f59e0b');
+    doc.lineWidth(3);
+    doc.rect(chartX, yPos, chartWidth, boxHeight)
+       .stroke('#f59e0b');
+    
+    const fatProgressWidth = (fatPercent / 100) * (chartWidth - 40);
+    doc.rect(chartX + 20, yPos + boxHeight - 12, fatProgressWidth, 8)
+       .fill('#f59e0b');
+    
+    doc.fontSize(16)
+       .fillColor('#f59e0b')
+       .text('FAT', chartX + 25, yPos + 15);
+    doc.fontSize(28)
+       .fillColor('#f59e0b')
+       .text(`${fatPercent.toFixed(0)}%`, chartX + chartWidth - 120, yPos + 10, { width: 100, align: 'right' });
+    doc.fontSize(13)
+       .fillColor(THEME_COLORS.textSecondary)
+       .text(`${overview.macros.fat || 0}g`, chartX + 25, yPos + 40);
+
+    yPos += boxHeight + 50;
+  }
+
+  // Daily Calories Chart Section with modern bar chart
+  if (planData.days && Array.isArray(planData.days) && planData.days.length > 0) {
+    doc.fontSize(20)
+       .fillColor(THEME_COLORS.textPrimary)
+       .text('DAILY CALORIES', PAGE_LAYOUT.margin, yPos);
+    
+    yPos += 10;
+    
+    // Subtle accent line - reduced opacity to prevent conflicts
+    doc.strokeColor(THEME_COLORS.primary);
+    doc.lineWidth(1);
+    doc.opacity(0.3); // Reduced from 0.5 to prevent visual conflicts
+    doc.moveTo(PAGE_LAYOUT.margin, yPos)
+       .lineTo(PAGE_LAYOUT.margin + 200, yPos)
+       .stroke();
+    doc.opacity(1.0);
+    
+    yPos += 35; // Increased spacing after accent line
+
+    // Calculate daily calories for each day
+    const dailyCalories = planData.days.map((day: any, index: number) => {
+      if (!day || !day.meals) return { day: index + 1, calories: 0 };
+      
+      const breakfast = day.meals.breakfast?.nutrition?.calories || 0;
+      const lunch = day.meals.lunch?.nutrition?.calories || 0;
+      const dinner = day.meals.dinner?.nutrition?.calories || 0;
+      const snacks = Array.isArray(day.meals.snacks) 
+        ? day.meals.snacks.reduce((sum: number, snack: any) => sum + (snack?.nutrition?.calories || 0), 0)
+        : 0;
+      
+      return {
+        day: index + 1,
+        calories: breakfast + lunch + dinner + snacks
+      };
+    });
+
+    // Find max calories for scaling
+    const maxCalories = Math.max(...dailyCalories.map(d => d.calories), overview.dailyCalories || 2500);
+    const chartHeight = 220;
+    const chartPadding = 40;
+    const barSpacing = 15;
+    const availableWidth = doc.page.width - (PAGE_LAYOUT.margin * 2) - (chartPadding * 2);
+    const barWidth = Math.min((availableWidth - (dailyCalories.length - 1) * barSpacing) / dailyCalories.length, 60);
+    const chartStartY = yPos + 20;
+    const chartEndY = chartStartY + chartHeight;
+    const chartX = PAGE_LAYOUT.margin + chartPadding;
+
+    // Draw chart background with border
+    doc.rect(PAGE_LAYOUT.margin, chartStartY, doc.page.width - (PAGE_LAYOUT.margin * 2), chartHeight)
+       .fillAndStroke(THEME_COLORS.cardBackground, THEME_COLORS.primary);
+    doc.lineWidth(2);
+    doc.rect(PAGE_LAYOUT.margin, chartStartY, doc.page.width - (PAGE_LAYOUT.margin * 2), chartHeight)
+       .stroke(THEME_COLORS.primary);
+
+    // Draw grid lines
+    doc.strokeColor(THEME_COLORS.textSecondary);
+    doc.lineWidth(0.5);
+    doc.opacity(0.2);
+    for (let i = 1; i <= 4; i++) {
+      const gridY = chartStartY + (chartHeight / 5) * i;
+      doc.moveTo(PAGE_LAYOUT.margin + 5, gridY)
+         .lineTo(doc.page.width - PAGE_LAYOUT.margin - 5, gridY)
+         .stroke();
+    }
+    doc.opacity(1.0);
+
+    // Draw bars with gradient effect
+    let barX = chartX;
+    dailyCalories.forEach((dayData: any, index: number) => {
+      const barHeight = (dayData.calories / maxCalories) * (chartHeight - 60);
+      const barY = chartEndY - barHeight - 30;
+
+      // Draw bar with rounded top effect (using a small rectangle on top)
+      doc.rect(barX, barY, barWidth, barHeight)
+         .fill('#84cc16');
+      
+      // Add subtle highlight on top
+      doc.opacity(0.3);
+      doc.rect(barX, barY, barWidth, Math.min(barHeight * 0.2, 10))
+         .fill('#FFFFFF');
+      doc.opacity(1.0);
+
+      // Day label
+      doc.fontSize(11)
+         .fillColor(THEME_COLORS.textPrimary)
+         .text(`Day ${dayData.day}`, barX, chartEndY - 20, { width: barWidth, align: 'center' });
+
+      // Calories label on top of bar
+      if (barHeight > 25) {
+        doc.fontSize(10)
+           .fillColor(THEME_COLORS.textPrimary)
+           .text(`${dayData.calories}`, barX, barY - 18, { width: barWidth, align: 'center' });
+      } else {
+        // If bar is too short, show label above
+        doc.fontSize(9)
+           .fillColor(THEME_COLORS.textSecondary)
+           .text(`${dayData.calories}`, barX, barY - 15, { width: barWidth, align: 'center' });
+      }
+
+      barX += barWidth + barSpacing;
+    });
+
+    // Y-axis label (vertical text)
+    doc.save();
+    doc.translate(PAGE_LAYOUT.margin + 12, chartStartY + chartHeight / 2);
+    doc.rotate(-90, { origin: [0, 0] });
+    doc.fontSize(11)
+       .fillColor(THEME_COLORS.textSecondary)
+       .text('Calories (kcal)', 0, 0, { align: 'center' });
     doc.restore();
+
+    yPos = chartEndY + 40;
+  }
+
+  // Footer
+  const footerY = doc.page.height - PAGE_LAYOUT.bottomMargin;
+  if (yPos < footerY - 25) {
+    doc.fontSize(11)
+       .fillColor(THEME_COLORS.textSecondary)
+       .text(
+         'TailoredMealPlan.com',
+         PAGE_LAYOUT.margin,
+         footerY - 5,
+         { align: 'center', width: doc.page.width - (PAGE_LAYOUT.margin * 2) }
+       );
+    doc.fontSize(9)
+       .fillColor(THEME_COLORS.textSecondary)
+       .opacity(0.8)
+       .text(
+         'Personalized Nutrition Plans',
+         PAGE_LAYOUT.margin,
+         footerY + 10,
+         { align: 'center', width: doc.page.width - (PAGE_LAYOUT.margin * 2) }
+       );
     doc.opacity(1.0);
   }
 }
 
 /**
- * Add cover page (redesigned with dark theme)
+ * Add cover page (modern, professional design)
  */
 function addCoverPage(
   doc: any,
@@ -331,94 +596,130 @@ function addCoverPage(
     day: 'numeric',
   });
 
-  let yPos = 80;
+  let yPos = 100;
 
-  // Brand header section
-  doc.fontSize(24)
+  // Elegant brand header with accent line
+  doc.strokeColor(THEME_COLORS.primary);
+  doc.lineWidth(3);
+  doc.moveTo((doc.page.width - 200) / 2, yPos)
+     .lineTo((doc.page.width + 200) / 2, yPos)
+     .stroke();
+  
+  yPos += 20;
+  
+  doc.fontSize(20)
      .fillColor(THEME_COLORS.primary)
      .text('TAILOREDMEALPLAN.COM', 50, yPos, { align: 'center' });
   
-  yPos += 40;
+  yPos += 50;
 
-  // Plan type badge
-  const badgeWidth = 150;
-  const badgeHeight = 35;
+  // Modern plan type badge with rounded corners effect (using padding)
+  const badgeWidth = 180;
+  const badgeHeight = 45;
   const badgeX = (doc.page.width - badgeWidth) / 2;
+  
+  // Badge background with gradient effect (darker center)
   doc.rect(badgeX, yPos, badgeWidth, badgeHeight)
      .fill(THEME_COLORS.primary);
-  doc.fontSize(16)
+  
+  // Badge text with better spacing
+  doc.fontSize(18)
      .fillColor(THEME_COLORS.background)
-     .text(`${planTypeLabel.toUpperCase()} PLAN`, badgeX, yPos + 10, {
+     .text(`${planTypeLabel.toUpperCase()} PLAN`, badgeX, yPos + 12, {
        width: badgeWidth,
        align: 'center',
      });
 
-  yPos += badgeHeight + 30;
+  yPos += badgeHeight + 50;
 
-  // Generated date
-  doc.fontSize(12)
-     .fillColor(THEME_COLORS.textSecondary)
-     .text(`Generated on ${createdDate}`, 50, yPos, { align: 'center' });
-
-  yPos += 50;
-
-  // Main title
-  doc.fontSize(36)
+  // Elegant main title with better typography
+  doc.fontSize(42)
      .fillColor(THEME_COLORS.textPrimary)
      .text('YOUR PERSONALIZED', 50, yPos, { align: 'center' });
   
-  yPos += 40;
+  yPos += 50;
   
-  doc.fontSize(36)
-     .fillColor(THEME_COLORS.textPrimary)
+  doc.fontSize(42)
+     .fillColor(THEME_COLORS.primary)
      .text('MEAL PLAN', 50, yPos, { align: 'center' });
 
   yPos += 60;
 
-  // Overview section
+  // Generated date with subtle styling
+  doc.fontSize(11)
+     .fillColor(THEME_COLORS.textSecondary)
+     .opacity(0.7)
+     .text(`Generated on ${createdDate}`, 50, yPos, { align: 'center' });
+  
+  doc.opacity(1.0);
+  yPos += 50;
+
+  // Overview section with modern card design
   if (planData.overview && typeof planData.overview === 'object') {
     const { overview } = planData;
 
-    // Section header
-    doc.fontSize(22)
+    // Section header with accent
+    doc.fontSize(20)
        .fillColor(THEME_COLORS.textPrimary)
        .text('NUTRITION OVERVIEW', PAGE_LAYOUT.margin, yPos, { align: 'center' });
 
-    yPos += 50;
+    yPos += 15;
+    
+    // Accent line under header
+    doc.strokeColor(THEME_COLORS.primary);
+    doc.lineWidth(1);
+    doc.moveTo((doc.page.width - 250) / 2, yPos)
+       .lineTo((doc.page.width + 250) / 2, yPos)
+       .stroke();
 
-    // Stats boxes - grid layout
-    const boxWidth = 110;
-    const boxHeight = 90;
-    const spacing = 15;
+    yPos += 40;
+
+    // Modern stats cards with better spacing and design
+    const boxWidth = 120;
+    const boxHeight = 100;
+    const spacing = 20;
     const totalWidth = (boxWidth * 4) + (spacing * 3);
     let xPos = (doc.page.width - totalWidth) / 2;
 
-    // Daily Calories
+    // Daily Calories - featured card
     doc.rect(xPos, yPos, boxWidth, boxHeight)
-       .fillAndStroke(THEME_COLORS.cardBackground, THEME_COLORS.border);
-    doc.fontSize(11)
+       .fillAndStroke(THEME_COLORS.cardBackground, THEME_COLORS.primary);
+    doc.lineWidth(2);
+    doc.rect(xPos, yPos, boxWidth, boxHeight)
+       .stroke(THEME_COLORS.primary);
+    
+    doc.fontSize(10)
        .fillColor(THEME_COLORS.textSecondary)
-       .text('Daily Calories', xPos + 8, yPos + 12, { width: boxWidth - 16, align: 'center' });
-    doc.fontSize(28)
+       .text('Daily Calories', xPos + 10, yPos + 15, { width: boxWidth - 20, align: 'center' });
+    doc.fontSize(32)
        .fillColor(THEME_COLORS.primary)
-       .text(String(overview.dailyCalories || 'N/A'), xPos + 8, yPos + 35, {
-         width: boxWidth - 16,
+       .text(String(overview.dailyCalories || 'N/A'), xPos + 10, yPos + 35, {
+         width: boxWidth - 20,
          align: 'center',
        });
+    doc.fontSize(9)
+       .fillColor(THEME_COLORS.textSecondary)
+       .opacity(0.8)
+       .text('kcal', xPos + 10, yPos + 75, { width: boxWidth - 20, align: 'center' });
+    doc.opacity(1.0);
 
     xPos += boxWidth + spacing;
 
     // Protein
     if (overview.macros?.protein) {
       doc.rect(xPos, yPos, boxWidth, boxHeight)
-         .fillAndStroke(THEME_COLORS.cardBackground, THEME_COLORS.border);
-      doc.fontSize(11)
+         .fillAndStroke(THEME_COLORS.cardBackground, '#84cc16');
+      doc.lineWidth(2);
+      doc.rect(xPos, yPos, boxWidth, boxHeight)
+         .stroke('#84cc16');
+      
+      doc.fontSize(10)
          .fillColor(THEME_COLORS.textSecondary)
-         .text('Protein', xPos + 8, yPos + 12, { width: boxWidth - 16, align: 'center' });
-      doc.fontSize(28)
-         .fillColor(THEME_COLORS.primary)
-         .text(`${overview.macros.protein}g`, xPos + 8, yPos + 35, {
-           width: boxWidth - 16,
+         .text('Protein', xPos + 10, yPos + 15, { width: boxWidth - 20, align: 'center' });
+      doc.fontSize(32)
+         .fillColor('#84cc16')
+         .text(`${overview.macros.protein}g`, xPos + 10, yPos + 35, {
+           width: boxWidth - 20,
            align: 'center',
          });
       xPos += boxWidth + spacing;
@@ -427,14 +728,18 @@ function addCoverPage(
     // Carbs
     if (overview.macros?.carbs) {
       doc.rect(xPos, yPos, boxWidth, boxHeight)
-         .fillAndStroke(THEME_COLORS.cardBackground, THEME_COLORS.border);
-      doc.fontSize(11)
+         .fillAndStroke(THEME_COLORS.cardBackground, '#3b82f6');
+      doc.lineWidth(2);
+      doc.rect(xPos, yPos, boxWidth, boxHeight)
+         .stroke('#3b82f6');
+      
+      doc.fontSize(10)
          .fillColor(THEME_COLORS.textSecondary)
-         .text('Carbs', xPos + 8, yPos + 12, { width: boxWidth - 16, align: 'center' });
-      doc.fontSize(28)
-         .fillColor(THEME_COLORS.primary)
-         .text(`${overview.macros.carbs}g`, xPos + 8, yPos + 35, {
-           width: boxWidth - 16,
+         .text('Carbs', xPos + 10, yPos + 15, { width: boxWidth - 20, align: 'center' });
+      doc.fontSize(32)
+         .fillColor('#3b82f6')
+         .text(`${overview.macros.carbs}g`, xPos + 10, yPos + 35, {
+           width: boxWidth - 20,
            align: 'center',
          });
       xPos += boxWidth + spacing;
@@ -443,34 +748,48 @@ function addCoverPage(
     // Fat
     if (overview.macros?.fat) {
       doc.rect(xPos, yPos, boxWidth, boxHeight)
-         .fillAndStroke(THEME_COLORS.cardBackground, THEME_COLORS.border);
-      doc.fontSize(11)
+         .fillAndStroke(THEME_COLORS.cardBackground, '#f59e0b');
+      doc.lineWidth(2);
+      doc.rect(xPos, yPos, boxWidth, boxHeight)
+         .stroke('#f59e0b');
+      
+      doc.fontSize(10)
          .fillColor(THEME_COLORS.textSecondary)
-         .text('Fat', xPos + 8, yPos + 12, { width: boxWidth - 16, align: 'center' });
-      doc.fontSize(28)
-         .fillColor(THEME_COLORS.primary)
-         .text(`${overview.macros.fat}g`, xPos + 8, yPos + 35, {
-           width: boxWidth - 16,
+         .text('Fat', xPos + 10, yPos + 15, { width: boxWidth - 20, align: 'center' });
+      doc.fontSize(32)
+         .fillColor('#f59e0b')
+         .text(`${overview.macros.fat}g`, xPos + 10, yPos + 35, {
+           width: boxWidth - 20,
            align: 'center',
          });
     }
 
     if (overview.duration) {
-      yPos += boxHeight + 30;
-      doc.fontSize(12)
+      yPos += boxHeight + 40;
+      doc.fontSize(11)
          .fillColor(THEME_COLORS.textSecondary)
+         .opacity(0.8)
          .text(
            `Plan Duration: ${overview.duration} ${overview.duration === 1 ? 'day' : 'days'}`,
            50,
            yPos,
            { align: 'center' }
          );
+      doc.opacity(1.0);
     }
   }
 
-  // Footer - Professional formatting
+  // Elegant footer
   const footerY = doc.page.height - PAGE_LAYOUT.bottomMargin;
-  doc.fontSize(11)
+  doc.strokeColor(THEME_COLORS.primary);
+  doc.lineWidth(1);
+  doc.opacity(0.3);
+  doc.moveTo(PAGE_LAYOUT.margin, footerY - 20)
+     .lineTo(doc.page.width - PAGE_LAYOUT.margin, footerY - 20)
+     .stroke();
+  doc.opacity(1.0);
+  
+  doc.fontSize(10)
      .fillColor(THEME_COLORS.textSecondary)
      .text(
        'TailoredMealPlan.com',
@@ -478,97 +797,128 @@ function addCoverPage(
        footerY - 5,
        { align: 'center', width: doc.page.width - (PAGE_LAYOUT.margin * 2) }
      );
-  doc.fontSize(9)
+  doc.fontSize(8)
      .fillColor(THEME_COLORS.textSecondary)
-     .opacity(0.8)
+     .opacity(0.7)
      .text(
        'Personalized Nutrition Plans',
        PAGE_LAYOUT.margin,
-       footerY + 10,
+       footerY + 8,
        { align: 'center', width: doc.page.width - (PAGE_LAYOUT.margin * 2) }
      );
   doc.opacity(1.0);
 }
 
 /**
- * Add daily plan (redesigned with dark theme and page break handling)
+ * Add daily plan (modern, professional design)
  */
 function addDayPlan(doc: any, day: any, dayNumber: number, isFreeTier: boolean = false) {
   const meals = day.meals || {};
-  let yPos = PAGE_LAYOUT.topMargin;
+  let yPos = PAGE_LAYOUT.topMargin + 10;
 
-  // Day header - large, bold, uppercase in primary green
-  doc.fontSize(32)
-     .fillColor(THEME_COLORS.primary)
-     .text(`DAY ${dayNumber}`, PAGE_LAYOUT.margin, yPos);
+  // Modern day header with badge effect
+  const dayHeaderWidth = 120;
+  const dayHeaderHeight = 40;
+  const dayHeaderX = PAGE_LAYOUT.margin;
   
-  yPos += 45;
+  // Badge background
+  doc.rect(dayHeaderX, yPos, dayHeaderWidth, dayHeaderHeight)
+     .fill(THEME_COLORS.primary);
+  
+  doc.fontSize(24)
+     .fillColor(THEME_COLORS.background)
+     .text(`DAY ${dayNumber}`, dayHeaderX, yPos + 8, {
+       width: dayHeaderWidth,
+       align: 'center',
+     });
+  
+  yPos += dayHeaderHeight + 30;
   
   // Check page break before divider
   yPos = checkPageBreak(doc, 50, yPos, isFreeTier);
   
-  // Horizontal divider line in primary green
-  doc.strokeColor(THEME_COLORS.divider);
-  doc.lineWidth(2);
+  // Elegant divider with accent - ensure it doesn't conflict with content
+  doc.strokeColor(THEME_COLORS.primary);
+  doc.lineWidth(2); // Reduced from 3 to prevent visual conflict
   doc.moveTo(PAGE_LAYOUT.margin, yPos)
      .lineTo(doc.page.width - PAGE_LAYOUT.margin, yPos)
      .stroke();
   
-  yPos += 30;
+  yPos += 40; // Increased spacing after divider
 
   // Breakfast
   if (meals.breakfast) {
     yPos = addMeal(doc, meals.breakfast, 'Breakfast', yPos, isFreeTier);
-    yPos += PAGE_LAYOUT.mealSpacing;
+    yPos += PAGE_LAYOUT.mealSpacing + 10; // Extra spacing between meals
   }
 
   // Lunch
   if (meals.lunch) {
     yPos = addMeal(doc, meals.lunch, 'Lunch', yPos, isFreeTier);
-    yPos += PAGE_LAYOUT.mealSpacing;
+    yPos += PAGE_LAYOUT.mealSpacing + 10; // Extra spacing between meals
   }
 
   // Dinner
   if (meals.dinner) {
     yPos = addMeal(doc, meals.dinner, 'Dinner', yPos, isFreeTier);
-    yPos += PAGE_LAYOUT.mealSpacing;
+    yPos += PAGE_LAYOUT.mealSpacing + 10; // Extra spacing between meals
   }
 
-  // Snacks
+  // Snacks section with modern design
   if (meals.snacks && Array.isArray(meals.snacks) && meals.snacks.length > 0) {
     // Check if we have space for snacks section
     yPos = checkPageBreak(doc, 100, yPos, isFreeTier);
     
-    // Snacks header
-    doc.fontSize(18)
-       .fillColor(THEME_COLORS.primary)
-       .text('SNACKS', PAGE_LAYOUT.margin, yPos);
-    yPos += 30;
+    // Modern snacks header with badge
+    const snackBadgeWidth = 100;
+    const snackBadgeHeight = 30;
+    doc.rect(PAGE_LAYOUT.margin, yPos, snackBadgeWidth, snackBadgeHeight)
+       .fill(THEME_COLORS.primary);
+    doc.fontSize(14)
+       .fillColor(THEME_COLORS.background)
+       .text('SNACKS', PAGE_LAYOUT.margin, yPos + 7, {
+         width: snackBadgeWidth,
+         align: 'center',
+       });
+    yPos += snackBadgeHeight + 20;
 
     meals.snacks.forEach((snack: any) => {
       // Check page break before each snack
       yPos = checkPageBreak(doc, 70, yPos, isFreeTier);
       
-      // Snack card
-      const snackCardHeight = 50;
-      doc.rect(PAGE_LAYOUT.margin, yPos, doc.page.width - (PAGE_LAYOUT.margin * 2), snackCardHeight)
-         .fillAndStroke(THEME_COLORS.cardBackground, THEME_COLORS.border);
+      // Modern snack card with accent
+      const snackCardHeight = 55;
+      const snackCardX = PAGE_LAYOUT.margin;
+      const snackCardWidth = doc.page.width - (PAGE_LAYOUT.margin * 2);
+      
+      doc.rect(snackCardX, yPos, snackCardWidth, snackCardHeight)
+         .fillAndStroke(THEME_COLORS.cardBackground, THEME_COLORS.primary);
+      doc.lineWidth(2);
+      doc.rect(snackCardX, yPos, snackCardWidth, snackCardHeight)
+         .stroke(THEME_COLORS.primary);
+      
+      // Accent bar
+      doc.rect(snackCardX, yPos, 4, snackCardHeight)
+         .fill(THEME_COLORS.primary);
       
       const snackName = sanitizeText(snack?.name || 'Snack');
-      doc.fontSize(14)
+      const snackNameWidth = snackCardWidth - (PAGE_LAYOUT.cardPadding * 2) - 20;
+      const snackNameHeight = getTextHeight(doc, snackName, snackNameWidth, 15, 3);
+      
+      doc.fontSize(15)
          .fillColor(THEME_COLORS.textPrimary)
-         .text(snackName, PAGE_LAYOUT.margin + PAGE_LAYOUT.cardPadding, yPos + 12, {
-           width: doc.page.width - (PAGE_LAYOUT.margin * 2) - (PAGE_LAYOUT.cardPadding * 2),
+         .text(snackName, snackCardX + PAGE_LAYOUT.cardPadding + 10, yPos + 12, {
+           width: snackNameWidth,
            ellipsis: true,
          });
       
       if (snack?.nutrition?.calories) {
-        doc.fontSize(11)
-           .fillColor(THEME_COLORS.textSecondary)
-           .text(`${snack.nutrition.calories} kcal`, PAGE_LAYOUT.margin + PAGE_LAYOUT.cardPadding, yPos + 30);
+        doc.fontSize(12)
+           .fillColor(THEME_COLORS.primary)
+           .text(`${snack.nutrition.calories} kcal`, snackCardX + PAGE_LAYOUT.cardPadding + 10, yPos + 12 + Math.max(snackNameHeight, 20) + 5);
       }
       
-      yPos += snackCardHeight + 15;
+      yPos += snackCardHeight + 20; // Extra spacing between snack cards
     });
   }
 
@@ -619,11 +969,18 @@ function addMeal(
   const estimatedHeight = 200; // Base estimate
   currentY = checkPageBreak(doc, estimatedHeight, currentY, isFreeTier);
 
-  // Meal type label - primary green, bold, uppercase
-  doc.fontSize(16)
-     .fillColor(THEME_COLORS.primary)
-     .text(mealType.toUpperCase(), cardX, currentY);
-  currentY += 25;
+  // Modern meal type label with badge
+  const mealBadgeWidth = 100;
+  const mealBadgeHeight = 28;
+  doc.rect(cardX, currentY, mealBadgeWidth, mealBadgeHeight)
+     .fill(THEME_COLORS.primary);
+  doc.fontSize(13)
+     .fillColor(THEME_COLORS.background)
+     .text(mealType.toUpperCase(), cardX, currentY + 6, {
+       width: mealBadgeWidth,
+       align: 'center',
+     });
+  currentY += mealBadgeHeight + 20;
 
   // Meal card background start position
   const cardStartY = currentY;
@@ -631,29 +988,36 @@ function addMeal(
   // Meal name - sanitize and validate
   const mealName = sanitizeText(meal.name || 'N/A');
   if (mealName && mealName.length > 0) {
+    // Calculate actual text height to prevent overlap
+    const mealNameWidth = cardWidth - (cardPadding * 2);
+    const mealNameHeight = getTextHeight(doc, mealName, mealNameWidth, 18, 4);
+    
     doc.fontSize(18)
        .fillColor(THEME_COLORS.textPrimary)
        .text(mealName, cardX + cardPadding, currentY, {
-         width: cardWidth - (cardPadding * 2),
+         width: mealNameWidth,
          ellipsis: true,
        });
-    currentY += 25;
+    currentY += Math.max(mealNameHeight, 25) + 5; // Add extra spacing
   } else {
     currentY += 10;
   }
 
-  // Nutrition info box
+  // Modern nutrition info box with better design
   if (meal.nutrition && typeof meal.nutrition === 'object') {
     const nutrition = meal.nutrition;
-    const nutritionBoxHeight = 40;
+    const nutritionBoxHeight = 45;
     
     // Check page break before nutrition box
     currentY = checkPageBreak(doc, nutritionBoxHeight + 30, currentY, isFreeTier);
     const nutritionBoxY = currentY;
     
-    // Nutrition box with primary green border
+    // Nutrition box with accent border
     doc.rect(cardX + cardPadding, nutritionBoxY, cardWidth - (cardPadding * 2), nutritionBoxHeight)
-       .fillAndStroke(THEME_COLORS.cardBackground, THEME_COLORS.border);
+       .fillAndStroke(THEME_COLORS.cardBackground, THEME_COLORS.primary);
+    doc.lineWidth(2);
+    doc.rect(cardX + cardPadding, nutritionBoxY, cardWidth - (cardPadding * 2), nutritionBoxHeight)
+       .stroke(THEME_COLORS.primary);
     
     const nutritionParts = [
       nutrition.calories ? `${nutrition.calories} kcal` : null,
@@ -664,45 +1028,52 @@ function addMeal(
     
     if (nutritionParts.length > 0) {
       const nutritionText = nutritionParts.join(' • ');
-      doc.fontSize(12)
+      doc.fontSize(13)
          .fillColor(THEME_COLORS.primary)
-         .text(nutritionText, cardX + cardPadding + 8, nutritionBoxY + 12, {
-           width: cardWidth - (cardPadding * 2) - 16,
+         .text(nutritionText, cardX + cardPadding + 10, nutritionBoxY + 14, {
+           width: cardWidth - (cardPadding * 2) - 20,
          });
     }
     
-    currentY = nutritionBoxY + nutritionBoxHeight + 20;
+    currentY = nutritionBoxY + nutritionBoxHeight + 25;
   } else {
     currentY += 10;
   }
 
-  // Ingredients section
+  // Ingredients section with modern styling
   if (meal.ingredients && Array.isArray(meal.ingredients) && meal.ingredients.length > 0) {
     // Check page break before ingredients
-    const ingredientsHeight = 20 + (meal.ingredients.length * 18);
+    const ingredientsHeight = 25 + (meal.ingredients.length * 18);
     currentY = checkPageBreak(doc, ingredientsHeight, currentY, isFreeTier);
     
-    doc.fontSize(12)
-       .fillColor(THEME_COLORS.textSecondary)
+    doc.fontSize(13)
+       .fillColor(THEME_COLORS.primary)
        .text('INGREDIENTS:', cardX + cardPadding, currentY);
-    currentY += 18;
+    currentY += 20;
 
     meal.ingredients.forEach((ingredient: any) => {
       const sanitizedIngredient = sanitizeText(ingredient);
       if (sanitizedIngredient && sanitizedIngredient.length > 0) {
         // Check if we need page break for this ingredient
-        currentY = checkPageBreak(doc, 20, currentY, isFreeTier);
+        currentY = checkPageBreak(doc, 25, currentY, isFreeTier);
+        
+        // Modern bullet point with accent color
+        doc.circle(cardX + cardPadding + 5, currentY + 4, 3)
+           .fill(THEME_COLORS.primary);
+        
+        const ingredientWidth = cardWidth - (cardPadding * 2) - 25;
+        const ingredientHeight = getTextHeight(doc, sanitizedIngredient, ingredientWidth, 11, 3);
         
         doc.fontSize(11)
            .fillColor(THEME_COLORS.textPrimary)
-           .text(`• ${sanitizedIngredient}`, cardX + cardPadding + 10, currentY, {
-             width: cardWidth - (cardPadding * 2) - 20,
+           .text(sanitizedIngredient, cardX + cardPadding + 15, currentY, {
+             width: ingredientWidth,
              ellipsis: true,
            });
-        currentY += 15;
+        currentY += Math.max(ingredientHeight, 18) + 2; // Ensure minimum spacing
       }
     });
-    currentY += 10;
+    currentY += 18; // Extra spacing after ingredients
   }
 
   // Instructions section
@@ -725,110 +1096,141 @@ function addMeal(
         instructionsText = instructionsText.substring(0, maxInstructionsLength) + '...';
       }
       
-      // Estimate instructions height
+      // Estimate instructions height more accurately
       const textWidth = cardWidth - (cardPadding * 2) - 20;
       const estimatedInstructionsHeight = Math.min(
-        doc.heightOfString(instructionsText, { width: textWidth }) + 40,
+        getTextHeight(doc, instructionsText, textWidth, 11, 5) + 50, // Add buffer for header
         400 // Cap at reasonable height
       );
       
       // Check page break before instructions
       currentY = checkPageBreak(doc, estimatedInstructionsHeight, currentY, isFreeTier);
       
-      doc.fontSize(12)
-         .fillColor(THEME_COLORS.textSecondary)
+      doc.fontSize(13)
+         .fillColor(THEME_COLORS.primary)
          .text('INSTRUCTIONS:', cardX + cardPadding, currentY);
-      currentY += 18;
+      currentY += 20;
 
       doc.fontSize(11)
          .fillColor(THEME_COLORS.textPrimary)
          .text(instructionsText, cardX + cardPadding + 10, currentY, {
            width: textWidth,
-           lineGap: 4,
+           lineGap: 5,
            ellipsis: true,
          });
       
-      const actualHeight = doc.heightOfString(instructionsText, {
-        width: textWidth,
-      });
-      currentY += actualHeight + 15;
+      // Calculate actual height to prevent overlap
+      const actualHeight = getTextHeight(doc, instructionsText, textWidth, 11, 5);
+      currentY += actualHeight + 20; // Add extra spacing after instructions
     }
   }
 
-  // Draw meal card border
-  const cardHeight = currentY - cardStartY + 10;
+  // Draw modern meal card border with accent
+  const cardHeight = currentY - cardStartY + 20;
   if (cardHeight > 0) {
-    doc.rect(cardX, cardStartY - 5, cardWidth, cardHeight)
-       .stroke(THEME_COLORS.border);
+    doc.lineWidth(2);
+    doc.rect(cardX, cardStartY - 10, cardWidth, cardHeight)
+       .stroke(THEME_COLORS.primary);
+    
+    // Accent line on left side
+    doc.rect(cardX, cardStartY - 10, 4, cardHeight)
+       .fill(THEME_COLORS.primary);
   }
 
-  return currentY + 10;
+  return currentY + 15; // Extra spacing after meal card
 }
 
 /**
- * Add grocery list (redesigned with dark theme and page break handling)
+ * Add grocery list (modern, professional design)
  */
 function addGroceryList(doc: any, groceryList: any, isFreeTier: boolean = false) {
   if (!groceryList || typeof groceryList !== 'object') {
     return; // Skip invalid grocery lists
   }
 
-  let yPos = PAGE_LAYOUT.topMargin;
+  let yPos = PAGE_LAYOUT.topMargin + 10;
 
-  // Header - large, bold, uppercase in primary green
-  doc.fontSize(32)
-     .fillColor(THEME_COLORS.primary)
-     .text('GROCERY LIST', PAGE_LAYOUT.margin, yPos, { align: 'center' });
+  // Modern header with badge effect
+  const headerWidth = 180;
+  const headerHeight = 45;
+  const headerX = (doc.page.width - headerWidth) / 2;
   
-  yPos += 50;
+  doc.rect(headerX, yPos, headerWidth, headerHeight)
+     .fill(THEME_COLORS.primary);
   
-  // Horizontal divider line in primary green
-  doc.strokeColor(THEME_COLORS.divider);
-  doc.lineWidth(2);
+  doc.fontSize(26)
+     .fillColor(THEME_COLORS.background)
+     .text('GROCERY LIST', headerX, yPos + 10, {
+       width: headerWidth,
+       align: 'center',
+     });
+  
+  yPos += headerHeight + 40;
+  
+  // Elegant divider
+  doc.strokeColor(THEME_COLORS.primary);
+  doc.lineWidth(3);
   doc.moveTo(PAGE_LAYOUT.margin, yPos)
      .lineTo(doc.page.width - PAGE_LAYOUT.margin, yPos)
      .stroke();
   
-  yPos += 30;
+  yPos += 35;
 
   Object.entries(groceryList).forEach(([category, items]) => {
     if (!Array.isArray(items) || items.length === 0) return;
 
     // Check page break before category
-    const categoryHeight = 35 + (items.length * 18) + 30;
+    const categoryHeight = 40 + (items.length * 20) + 25;
     yPos = checkPageBreak(doc, categoryHeight, yPos, isFreeTier);
 
-    // Category header - dark grey box with primary green border
-    const categoryHeaderHeight = 35;
-    doc.rect(PAGE_LAYOUT.margin, yPos, doc.page.width - (PAGE_LAYOUT.margin * 2), categoryHeaderHeight)
-       .fillAndStroke(THEME_COLORS.cardBackground, THEME_COLORS.border);
+    // Modern category header with accent
+    const categoryHeaderHeight = 40;
+    const categoryX = PAGE_LAYOUT.margin;
+    const categoryWidth = doc.page.width - (PAGE_LAYOUT.margin * 2);
+    
+    doc.rect(categoryX, yPos, categoryWidth, categoryHeaderHeight)
+       .fillAndStroke(THEME_COLORS.cardBackground, THEME_COLORS.primary);
+    doc.lineWidth(2);
+    doc.rect(categoryX, yPos, categoryWidth, categoryHeaderHeight)
+       .stroke(THEME_COLORS.primary);
+    
+    // Accent bar on left
+    doc.rect(categoryX, yPos, 5, categoryHeaderHeight)
+       .fill(THEME_COLORS.primary);
     
     const categoryName = sanitizeText(category);
-    doc.fontSize(16)
+    doc.fontSize(17)
        .fillColor(THEME_COLORS.primary)
        .text(categoryName.charAt(0).toUpperCase() + categoryName.slice(1).toUpperCase(), 
-             PAGE_LAYOUT.margin + PAGE_LAYOUT.cardPadding, yPos + 10);
+             categoryX + 20, yPos + 12);
     
-    yPos += categoryHeaderHeight + 15;
+    yPos += categoryHeaderHeight + 18;
 
-    // Items list
+    // Items list with modern bullets
     items.forEach((item: any) => {
       // Check page break before each item
       yPos = checkPageBreak(doc, 25, yPos, isFreeTier);
       
       const sanitizedItem = sanitizeText(item);
       if (sanitizedItem && sanitizedItem.length > 0) {
+        // Modern bullet point
+        doc.circle(PAGE_LAYOUT.margin + PAGE_LAYOUT.cardPadding + 5, yPos + 4, 3)
+           .fill(THEME_COLORS.primary);
+        
+        const itemWidth = doc.page.width - (PAGE_LAYOUT.margin * 2) - (PAGE_LAYOUT.cardPadding * 2) - 20;
+        const itemHeight = getTextHeight(doc, sanitizedItem, itemWidth, 12, 3);
+        
         doc.fontSize(12)
            .fillColor(THEME_COLORS.textPrimary)
-           .text(`• ${sanitizedItem}`, PAGE_LAYOUT.margin + PAGE_LAYOUT.cardPadding, yPos, {
-             width: doc.page.width - (PAGE_LAYOUT.margin * 2) - (PAGE_LAYOUT.cardPadding * 2),
+           .text(sanitizedItem, PAGE_LAYOUT.margin + PAGE_LAYOUT.cardPadding + 15, yPos, {
+             width: itemWidth,
              ellipsis: true,
            });
-        yPos += 18;
+        yPos += Math.max(itemHeight, 20) + 3; // Ensure minimum spacing between items
       }
     });
 
-    yPos += 15;
+    yPos += 20;
   });
 
   // Footer - Professional formatting (only if there's space)

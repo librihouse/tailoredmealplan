@@ -43,7 +43,8 @@ export function PlanCard({
   };
 
   const getTypeLabel = (planType: string) => {
-    return planType.charAt(0).toUpperCase() + planType.slice(1);
+    const safeType = planType || 'daily';
+    return safeType.charAt(0).toUpperCase() + safeType.slice(1);
   };
 
   return (

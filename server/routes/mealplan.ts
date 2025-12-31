@@ -7,7 +7,7 @@ import { Router } from "express";
 import { checkQuota, incrementUsage, getQuotaInfo, QuotaExceededError, type PlanType } from "../quota-supabase";
 import { supabase, getUserFromToken, getUserIdFromRequest } from "../supabase";
 import { generateMealPlan, type UserProfile } from "../services/openai";
-import { log } from "../index";
+import { log } from "../utils/log";
 
 const router = Router();
 

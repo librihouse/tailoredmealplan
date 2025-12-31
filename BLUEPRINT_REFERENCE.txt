@@ -13,8 +13,8 @@ EXECUTIVE SUMMARY
 Current State: MVP Development Phase - Active Testing & Improvement
 Focus: B2C Market (Free, Individual, Family Plans)
 Pricing Model: Simplified 3-tier structure
-Status: Core features implemented, monthly plan testing in progress, pricing accuracy improvements needed
-Last Updated: December 30, 2025
+Status: Core features implemented, payment flow debugging in progress, blocked on Razorpay integration
+Last Updated: December 30, 2025 (Evening)
 
 Current Pricing Structure:
 - Free: 7 credits lifetime, $0
@@ -25,7 +25,7 @@ Current Pricing Structure:
 CURRENT WORK STATUS (As of December 30, 2025)
 ================================================================================
 
-ACTIVE WORK: Individual Plan Testing with Razorpay, Monthly Plan Improvements (Paid Plans Only)
+ACTIVE WORK: Razorpay Payment Flow Debugging - Blank Page Issue After Payment
 
 Testing Status Summary:
 ✅ Daily Meal Plan: Tested and working, minor improvements pending
@@ -86,6 +86,56 @@ Recent Completions (December 29-30, 2025):
    - Fixed navigation issues (reliable page transitions)
    - Removed Share and Regenerate buttons per requirements
 
+Recent Work (December 30, 2025 - Evening):
+
+✅ Fixed Razorpay payment flow architecture issues (December 30, 2025)
+   - Root cause: Server files importing `log` from `../index` triggered Express server setup
+   - Created standalone `server/utils/log.ts` utility to prevent Express initialization
+   - Updated 7 server files to use new log utility:
+     * server/services/razorpay.ts
+     * server/services/openai.ts
+     * server/services/cleanup.ts
+     * server/routes/profile.ts
+     * server/routes/auth.ts
+     * server/routes/razorpay.ts
+     * server/routes/mealplan.ts
+   - Fixed Express server setup in `server/index.ts` to only run when explicitly started
+   - Eliminated "Could not find build directory" errors that were breaking API requests
+
+✅ Improved Razorpay payment handler (December 30, 2025)
+   - Added 500ms delay before redirect to ensure modal is fully closed
+   - Implemented absolute URL redirects to avoid relative path issues
+   - Enhanced error handling with multiple fallback redirect attempts
+   - Better handling of `about:blank` scenarios
+   - Uses `window.location.replace()` to prevent back button issues
+
+✅ Fixed payment verification and credits allocation (December 30, 2025)
+   - Updated `app/api/razorpay/verify-payment/route.ts` to allocate credits on subscription:
+     * Individual plan: 42 credits/month
+     * Family plan: 210 credits/month
+   - Creates/updates `plan_usage` record with correct `credits_limit`
+   - Resets `credits_used` to 0 for new billing periods
+   - Changed redirect from `/payment/success` to `/dashboard` after successful payment
+
+✅ Currency configuration (December 30, 2025)
+   - Changed from INR (Indian Rupees) back to USD for all plans
+   - Individual Monthly: $9.99 (999 cents)
+   - Family Monthly: $14.99 (1499 cents)
+
+⚠️ PAYMENT ISSUE - TODO FOR TOMORROW (December 30, 2025):
+   - Payment flow still experiencing blank page after clicking "Continue" in Razorpay modal
+   - Despite fixes to handler redirect logic, blank page persists
+   - Need to investigate:
+     * Razorpay test mode behavior with USD currency
+     * Potential 3D Secure flow issues
+     * Browser console errors during payment
+     * Network requests during payment callback
+   - Consider alternative approaches:
+     * Using Razorpay's `callback_url` for 3D Secure payments
+     * Implementing webhook-based payment verification
+     * Testing with different Razorpay test cards
+   - Status: Payment verification backend is working, but frontend redirect is failing
+
 Current Testing Focus:
 ✅ Free tier testing completed
    - Daily and weekly plans tested and working
@@ -93,11 +143,16 @@ Current Testing Focus:
    - Plan deletion and expiration working correctly
    - Minor improvements identified for daily/weekly plans (to be fixed during paid plan testing)
 
-🔄 Individual Plan Testing (Next Phase)
-   - Test subscription upgrade flow using Razorpay test cards
-   - Test all plan types (daily, weekly, monthly) on Individual plan tier
-   - Monthly plan generation improvements will be tested and refined during this phase
-   - Verify credit deduction works correctly for all plan types
+🔄 Individual Plan Testing (Blocked - Payment Issue)
+   - ⚠️ BLOCKED: Cannot test subscription upgrade due to payment flow blank page issue
+   - Payment verification backend is ready and working
+   - Credits allocation logic is implemented correctly
+   - Frontend redirect after payment is failing (blank page)
+   - Once payment flow is fixed, will test:
+     * Subscription upgrade flow using Razorpay test cards
+     * All plan types (daily, weekly, monthly) on Individual plan tier
+     * Monthly plan generation improvements
+     * Credit deduction verification for all plan types
    - Collect comprehensive data on all plan types
    - Identify and fix any issues with meal plan generation quality
 
@@ -107,8 +162,13 @@ Pending Improvements:
 ⚠️ Monthly meal plan: Improvements will be identified and applied during Individual plan testing phase
 
 Next Steps (Priority Order):
-1. ⚠️ Test Individual plan subscription upgrade using Razorpay test cards (see RAZORPAY TESTING & PLAN UPGRADE INSTRUCTIONS section)
-2. ⚠️ Test all plan types (daily, weekly, monthly) on Individual plan tier
+1. 🔴 URGENT: Fix Razorpay payment flow blank page issue
+   - Payment verification backend is working correctly
+   - Credits allocation is implemented and ready
+   - Frontend redirect after payment is failing (blank page)
+   - See "PAYMENT ISSUE - TODO FOR TOMORROW" section above for details
+2. ⚠️ Test Individual plan subscription upgrade using Razorpay test cards (BLOCKED until payment flow is fixed)
+3. ⚠️ Test all plan types (daily, weekly, monthly) on Individual plan tier (BLOCKED until payment flow is fixed)
    - Use Razorpay test cards for payment testing
    - Collect comprehensive data on all plan types
    - Verify credit deduction works correctly

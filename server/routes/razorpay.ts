@@ -6,7 +6,7 @@
 import { Router } from "express";
 import { createRazorpayOrder, verifyPaymentSignature, getPaymentDetails } from "../services/razorpay";
 import { supabase, getUserFromToken, getUserIdFromRequest } from "../supabase";
-import { log } from "../index";
+import { log } from "../utils/log";
 import { getRazorpayPlan } from "../config/razorpay-plans";
 
 const router = Router();

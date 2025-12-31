@@ -276,7 +276,7 @@ export default function GeneratingPage() {
   };
 
   const handleGoBack = () => {
-    router.push(`/dashboard/create/${planType || "daily"}`);
+    router.push(`/generate-meal-plan?type=${planType || "daily"}`);
   };
 
   return (

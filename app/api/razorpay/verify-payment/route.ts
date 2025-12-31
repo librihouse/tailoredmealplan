@@ -7,17 +7,27 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyPaymentSignature, getPaymentDetails } from "@/server/services/razorpay";
 import { supabaseAdmin } from "@/server/supabase";
 import { authenticateRequest, log } from "@/lib/api-helpers";
+import { B2C_PLANS } from "@/shared/plans";
 
 export async function POST(request: NextRequest) {
   try {
+    // #region agent log - Verify payment route entry
+    fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'verify-payment/route.ts:entry',message:'Verify payment route called',data:{timestamp:Date.now()},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F'})}).catch(()=>{});
+    // #endregion
     const authResult = await authenticateRequest(request);
     if (authResult instanceof NextResponse) {
+      // #region agent log - Auth failed
+      fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'verify-payment/route.ts:authFailed',message:'Authentication failed',data:{timestamp:Date.now()},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F'})}).catch(()=>{});
+      // #endregion
       return authResult;
     }
     const { userId } = authResult;
 
     const body = await request.json();
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature, planId } = body;
+    // #region agent log - Request body parsed
+    fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'verify-payment/route.ts:bodyParsed',message:'Request body parsed',data:{hasOrderId:!!razorpay_order_id,hasPaymentId:!!razorpay_payment_id,hasSignature:!!razorpay_signature,hasPlanId:!!planId,userId},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'F'})}).catch(()=>{});
+    // #endregion
 
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return NextResponse.json(
@@ -77,8 +87,8 @@ export async function POST(request: NextRequest) {
       user_id: userId,
       plan_id: planId,
       status: "active",
-      stripe_subscription_id: razorpay_payment_id,
-      stripe_customer_id: razorpay_order_id,
+      razorpay_subscription_id: razorpay_payment_id,
+      razorpay_customer_id: razorpay_order_id,
       current_period_start: now.toISOString(),
       current_period_end: periodEnd.toISOString(),
       billing_interval: billingInterval,
@@ -117,41 +127,98 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create initial plan usage record if it doesn't exist
-    const { data: existingUsage } = await supabaseAdmin
-      .from("plan_usage")
-      .select("*")
-      .eq("user_id", userId)
-      .eq("subscription_id", existingSub?.id || "new")
-      .single();
-
-    if (!existingUsage) {
-      const { data: newSub } = await supabaseAdmin
+    // Get the subscription ID (either existing or newly created)
+    let subscriptionId: string;
+    if (existingSub) {
+      subscriptionId = existingSub.id;
+    } else {
+      const { data: newSub, error: fetchError } = await supabaseAdmin
         .from("subscriptions")
         .select("id")
         .eq("user_id", userId)
         .single();
 
-      if (newSub) {
-        await supabaseAdmin.from("plan_usage").insert({
+      if (fetchError || !newSub) {
+        log(`Error fetching subscription after creation: ${fetchError?.message}`, "razorpay");
+        // Continue anyway - plan_usage can be created later
+        subscriptionId = "";
+      } else {
+        subscriptionId = newSub.id;
+      }
+    }
+
+    // Get plan details to allocate credits
+    const basePlanId = planId.replace("_monthly", "").replace("_annual", "");
+    const plan = B2C_PLANS[basePlanId as keyof typeof B2C_PLANS];
+    const monthlyCredits = plan?.limits.monthlyCredits || 0;
+
+    // Create or update plan usage record with credits allocation
+    if (subscriptionId) {
+      const { data: existingUsage } = await supabaseAdmin
+        .from("plan_usage")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("subscription_id", subscriptionId)
+        .single();
+
+      if (!existingUsage) {
+        // Create new usage record with credits allocated
+        const { error: usageError } = await supabaseAdmin.from("plan_usage").insert({
           user_id: userId,
-          subscription_id: newSub.id,
+          subscription_id: subscriptionId,
           billing_period_start: now.toISOString(),
           billing_period_end: periodEnd.toISOString(),
           weekly_plans_used: 0,
           monthly_plans_used: 0,
+          credits_used: 0,
+          credits_limit: monthlyCredits,
+          credits_purchased: 0,
+          credits_expires_at: null,
         });
+
+        if (usageError) {
+          log(`Error creating plan usage: ${usageError.message}`, "razorpay");
+          // Don't fail the whole request - usage can be created later
+        } else {
+          log(`Plan usage created with ${monthlyCredits} credits allocated for user: ${userId}`, "razorpay");
+        }
+      } else {
+        // Update existing usage record - reset credits for new billing period
+        const { error: updateUsageError } = await supabaseAdmin
+          .from("plan_usage")
+          .update({
+            billing_period_start: now.toISOString(),
+            billing_period_end: periodEnd.toISOString(),
+            credits_limit: monthlyCredits,
+            credits_used: 0, // Reset credits used for new billing period
+            weekly_plans_used: 0,
+            monthly_plans_used: 0,
+          })
+          .eq("user_id", userId)
+          .eq("subscription_id", subscriptionId);
+
+        if (updateUsageError) {
+          log(`Error updating plan usage: ${updateUsageError.message}`, "razorpay");
+        } else {
+          log(`Plan usage updated with ${monthlyCredits} credits allocated for user: ${userId}`, "razorpay");
+        }
       }
     }
 
     log(`Payment verified and subscription updated for user: ${userId}`, "razorpay");
 
+    // #region agent log - Success response
+    fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'verify-payment/route.ts:success',message:'Payment verification successful, returning response',data:{userId,planId,timestamp:Date.now()},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'G'})}).catch(()=>{});
+    // #endregion
     return NextResponse.json({
       success: true,
       message: "Payment verified and subscription activated",
       subscription: subscriptionData,
     });
   } catch (error: any) {
+    // #region agent log - Error in verify payment
+    fetch('http://127.0.0.1:7242/ingest/29ee16f2-f385-440f-b653-567260a65333',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'verify-payment/route.ts:error',message:'Error in payment verification',data:{errorMessage:error?.message,errorName:error?.name,errorStack:error?.stack?.substring(0,300),timestamp:Date.now()},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H'})}).catch(()=>{});
+    // #endregion
     log(`Error verifying payment: ${error.message}`, "razorpay");
     return NextResponse.json(
       { error: error.message || "Failed to verify payment" },

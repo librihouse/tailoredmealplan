@@ -25,6 +25,7 @@ import ProfessionalOnboarding from "@/pages/professional-onboarding";
 import ForgotPassword from "@/pages/forgot-password";
 import ResetPassword from "@/pages/reset-password";
 import CustomerTypeSelection from "@/pages/customer-type-selection";
+import GenerateMealPlan from "@/pages/generate-meal-plan";
 
 function HomeRedirect() {
   const { isAuthenticated, loading } = useAuth();
@@ -98,6 +99,11 @@ function Router() {
       <Route path="/meal-plans/:id">
         <ProtectedRoute>
           <MealPlanView />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/generate-meal-plan">
+        <ProtectedRoute>
+          <GenerateMealPlan />
         </ProtectedRoute>
       </Route>
       <Route path="/settings">

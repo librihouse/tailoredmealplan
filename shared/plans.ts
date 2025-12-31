@@ -70,7 +70,7 @@ export const B2C_PLANS: Record<PlanId, Plan> = {
     id: "individual",
     name: "Individual",
     description: "For dedicated health enthusiasts.",
-    price: { monthly: 9.99, annual: 7.40 },
+    price: { monthly: 7.99, annual: 6.66 },
     limits: {
       clients: 1,
       weeklyPlans: 50,
@@ -87,7 +87,7 @@ export const B2C_PLANS: Record<PlanId, Plan> = {
     id: "family",
     name: "Family",
     description: "Perfect for families with up to 5 members. Each member gets 30 daily plans, 4 weekly plans, and 1 monthly plan per month.",
-    price: { monthly: 14.99, annual: 12.99 },
+    price: { monthly: 12.99, annual: 10.83 },
     limits: {
       clients: 5,
       weeklyPlans: 20,

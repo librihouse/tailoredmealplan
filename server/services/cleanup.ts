@@ -4,7 +4,7 @@
  */
 
 import { supabaseAdmin, supabase } from "../supabase";
-import { log } from "../index";
+import { log } from "../utils/log";
 import { checkCreditExpiry } from "./credit-addon";
 
 // Use admin client if available, otherwise fallback to regular client

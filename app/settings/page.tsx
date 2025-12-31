@@ -51,8 +51,8 @@ export default function Settings() {
 
   const formatPrice = (planId: string, interval: string) => {
     const prices: Record<string, number> = {
-      individual: 9.99,
-      family: 14.99,
+      individual: 7.99,
+      family: 12.99,
       starter: 29,
       growth: 49,
       professional: 99,

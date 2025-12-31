@@ -97,6 +97,8 @@ export interface QuestionnaireFormData {
   activityLevel: string;
   currentWeight: string;
   height: string;
+  age: string;
+  targetWeight: string;
   bodyFatGoal: string;
   muscleMassGoal: string;
   hydrationPreferences: string;

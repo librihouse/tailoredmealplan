@@ -66,7 +66,7 @@ function MealPlansContent() {
               View and manage all your generated meal plans
             </p>
           </div>
-          <Link href="/customer-type-selection">
+          <Link href="/generate-meal-plan">
             <Button className="bg-primary hover:bg-primary/90 text-black font-bold uppercase tracking-wide h-12 px-6">
               <Plus className="mr-2 h-5 w-5" />
               Generate New Plan
@@ -146,7 +146,7 @@ function MealPlansContent() {
                   : `You haven't generated any ${filterType} meal plans yet. Create one to get started!`
                 }
               </p>
-              <Link href="/customer-type-selection">
+              <Link href="/generate-meal-plan">
                 <Button className="bg-primary hover:bg-primary/90 text-black font-bold uppercase tracking-wide h-12 px-8">
                   <Plus className="mr-2 h-5 w-5" />
                   Create Your First Plan

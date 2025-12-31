@@ -11,7 +11,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { createRazorpayOrder, verifyRazorpayPayment } from "@/lib/api";
+import { createRazorpayOrder, apiRequest } from "@/lib/api";
 import { openRazorpayCheckout } from "@/lib/razorpay";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -66,7 +66,53 @@ export default function Pricing() {
       const planId = getPlanId(plan.name);
       const billingInterval = "monthly"; // Only monthly billing for MVP
 
-      // Create Razorpay order
+      // CHECK: If this is test user, bypass payment
+      const TEST_USER_ID = process.env.NEXT_PUBLIC_TEST_USER_ID || "";
+      const isTestUser = user?.id === TEST_USER_ID;
+
+      if (isTestUser && TEST_USER_ID) {
+        // Bypass payment for test user - directly assign plan
+        try {
+          const data = await apiRequest<{
+            success: boolean;
+            message: string;
+            subscription: any;
+            credits: number;
+          }>("/subscriptions/assign-test-plan", {
+            method: "POST",
+            body: JSON.stringify({
+              planId,
+              billingInterval,
+            }),
+          });
+
+          toast({
+            title: "Success!",
+            description: data.message || `You've been assigned the ${plan.name} plan (Test Mode)`,
+          });
+
+          setProcessingPlan(null);
+          
+          // Redirect to dashboard after a short delay
+          setTimeout(() => {
+            router.push("/dashboard");
+          }, 1500);
+          return;
+        } catch (testError: any) {
+          toast({
+            title: "Error",
+            description: testError.message || "Failed to assign test plan. Please try again.",
+            variant: "destructive",
+          });
+          setProcessingPlan(null);
+          return;
+        }
+      }
+
+      // For other users, proceed with normal payment flow
+      // (This will be enabled when PayPal is ready)
+      // TEMPORARILY DISABLED - Uncomment when PayPal is ready
+      /*
       const orderData = await createRazorpayOrder({
         planId,
         billingInterval,
@@ -77,6 +123,7 @@ export default function Pricing() {
       const userEmail = user?.email || "";
 
       // Open Razorpay checkout
+      // Payment verification will be handled by the /payment/processing page
       await openRazorpayCheckout({
         orderId: orderData.orderId,
         amount: orderData.amount,
@@ -84,36 +131,8 @@ export default function Pricing() {
         planName: `${plan.name} - Monthly`,
         userEmail,
         userName,
-        onSuccess: async (response: any) => {
-          try {
-            // Verify payment
-            await verifyRazorpayPayment({
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-              planId: orderData.planId,
-              billingInterval,
-            });
-
-            toast({
-              title: "Success!",
-              description: "Your subscription has been activated successfully!",
-            });
-
-            // Redirect to dashboard
-            setTimeout(() => {
-              router.push("/dashboard");
-            }, 1500);
-          } catch (error: any) {
-            toast({
-              title: "Payment Verification Failed",
-              description: error.message || "Failed to verify payment. Please contact support.",
-              variant: "destructive",
-            });
-          } finally {
-            setProcessingPlan(null);
-          }
-        },
+        planId: orderData.planId,
+        billingInterval,
         onFailure: (error: any) => {
           toast({
             title: "Payment Failed",
@@ -123,6 +142,16 @@ export default function Pricing() {
           setProcessingPlan(null);
         },
       });
+      */
+      
+      // TEMPORARY: Show message for non-test users
+      toast({
+        title: "Payment Coming Soon",
+        description: "Paid plans will be available soon. For now, enjoy our free tier!",
+        variant: "default",
+      });
+      setProcessingPlan(null);
+      
     } catch (error: any) {
       toast({
         title: "Error",
@@ -156,42 +185,48 @@ export default function Pricing() {
       name: "Free Tier",
       price: "$0",
       period: "forever",
-      description: "Perfect for trying out personalized nutrition.",
+      description: "Perfect for trying out personalized nutrition with 7 lifetime credits.",
       mealPlanOptions: {
         daily: { count: 1, credits: 1 },
         weekly: { count: 1, credits: 2 },
       },
       features: [
-        "Basic Questionnaire",
-        "Recipes with Ingredients",
-        "Nutritional Breakdown",
+        "Full Health Questionnaire",
+        "Religious & Medical Diets",
+        "Dietary Preferences Support",
+        "Detailed Recipes with Ingredients",
+        "Complete Nutritional Breakdown",
+        "Organized Grocery Lists",
+        "PDF Export",
       ],
       limitations: [
-        "Grocery Lists",
-        "Progress Tracking",
-        "AI Chat Support",
-        "Watermarked Exports"
+        "Watermarked PDFs",
+        "7 Credits Total (Lifetime)",
+        "Monthly Plans Not Available"
       ],
       cta: "Get Started Free",
       popular: false
     },
     {
       name: "Individual",
-      price: "$9.99",
+      price: "$7.99",
       period: "per month",
-      description: "Comprehensive nutrition planning for dedicated health enthusiasts.",
+      description: "Unlimited nutrition planning with 42 credits per month. Perfect for consistent meal planning.",
       mealPlanOptions: {
         daily: { count: 30, credits: 1 },
         weekly: { count: 4, credits: 2 },
         monthly: { count: 1, credits: 4 },
       },
       features: [
-        "Full Dietary Customization",
+        "Full Health Questionnaire",
         "Religious & Medical Diets",
-        "Smart Grocery Lists",
-        "Progress Tracking",
-        "AI Chat Support",
-        "No Watermarks"
+        "Dietary Preferences Support",
+        "Detailed Recipes with Ingredients",
+        "Complete Nutritional Breakdown",
+        "Organized Grocery Lists",
+        "Monthly Plans (30 days)",
+        "Clean PDF Exports (No Watermarks)",
+        "42 Credits Per Month"
       ],
       limitations: [],
       cta: "Choose Individual",
@@ -199,9 +234,9 @@ export default function Pricing() {
     },
     {
       name: "Family",
-      price: "$14.99",
+      price: "$12.99",
       period: "per month",
-      description: "Perfect for families with up to 5 members. Each member gets 30 daily plans, 4 weekly plans, and 1 monthly plan per month.",
+      description: "Perfect for families with up to 5 members. 210 credits per month shared across all family members.",
       mealPlanOptions: {
         daily: { count: 150, credits: 1 }, // 30 per member × 5
         weekly: { count: 20, credits: 2 }, // 4 per member × 5
@@ -210,13 +245,15 @@ export default function Pricing() {
       features: [
         "Up to 5 Family Members",
         "Individual Profiles & Goals",
-        "Shared Meal Plans",
-        "Full Dietary Customization",
+        "Full Health Questionnaire (Per Member)",
         "Religious & Medical Diets",
-        "Smart Grocery Lists",
-        "Progress Tracking",
-        "AI Chat Support",
-        "No Watermarks"
+        "Dietary Preferences Support",
+        "Detailed Recipes with Ingredients",
+        "Complete Nutritional Breakdown",
+        "Organized Grocery Lists",
+        "Monthly Plans (30 days)",
+        "Clean PDF Exports (No Watermarks)",
+        "210 Credits Per Month (Shared)"
       ],
       limitations: [],
       cta: "Choose Family",

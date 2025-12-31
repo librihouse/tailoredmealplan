@@ -225,7 +225,8 @@ export async function getMealPlans(filters?: {
  * Get a single meal plan by ID
  */
 export async function getMealPlan(id: string) {
-  return apiRequest<any>(`/mealplan/${id}`);
+  const response = await apiRequest<{ plan: any }>(`/mealplan/${id}`);
+  return response.plan;
 }
 
 /**
@@ -280,6 +281,7 @@ export async function createRazorpayOrder(data: {
 
 /**
  * Verify Razorpay payment
+ * Payment verification should be quick, so we use a shorter timeout
  */
 export async function verifyRazorpayPayment(data: {
   razorpay_order_id: string;
@@ -288,14 +290,81 @@ export async function verifyRazorpayPayment(data: {
   planId: string;
   billingInterval: "monthly" | "annual";
 }) {
-  return apiRequest<{
-    success: boolean;
-    message: string;
-    subscription: any;
-  }>("/razorpay/verify-payment", {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
+  // Always refresh session first to ensure we have a valid token
+  let { data: { session }, error: sessionError } = await supabase.auth.refreshSession();
+  
+  // If refresh fails, try getting current session
+  if (sessionError || !session) {
+    const { data: sessionData } = await supabase.auth.getSession();
+    session = sessionData.session;
+  }
+  
+  // If still no session, user needs to sign in
+  if (!session) {
+    throw new Error("Not authenticated. Please sign in again.");
+  }
+  
+  const token = session.access_token;
+
+  if (!token) {
+    throw new Error("Not authenticated. Please sign in again.");
+  }
+
+  // Create an AbortController for timeout (30 seconds for payment verification)
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+  let response: Response;
+  try {
+    response = await fetch(`/api/razorpay/verify-payment`, {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+    clearTimeout(timeoutId);
+  } catch (fetchError: any) {
+    clearTimeout(timeoutId);
+    if (fetchError.name === 'AbortError') {
+      throw new Error("Payment verification timed out. Please check your payment status or contact support.");
+    }
+    throw new Error(`Network error: ${fetchError.message || "Failed to verify payment. Please try again."}`);
+  }
+
+  if (!response.ok) {
+    // Try to extract error message from response
+    let errorMessage = `Payment verification failed (${response.status})`;
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.error || errorData.message || errorMessage;
+    } catch {
+      // If JSON parsing fails, try to get text
+      try {
+        const errorText = await response.text();
+        if (errorText && errorText.trim()) {
+          errorMessage = errorText.substring(0, 200);
+        }
+      } catch {
+        // Use default error message
+      }
+    }
+    
+    // Provide more context based on status code
+    if (response.status === 400) {
+      errorMessage = `Invalid payment data: ${errorMessage}. Please contact support if this issue persists.`;
+    } else if (response.status === 401) {
+      errorMessage = "Your session has expired. Please sign in again.";
+    } else if (response.status === 500) {
+      errorMessage = `Server error during payment verification: ${errorMessage}. Please contact support.`;
+    }
+    
+    throw new Error(errorMessage);
+  }
+
+  return response.json();
 }
 
 /**

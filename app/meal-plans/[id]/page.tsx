@@ -8,7 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Spinner } from "@/components/ui/spinner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getMealPlan, deleteMealPlan } from "@/lib/api";
+import { getMealPlan, deleteMealPlan, exportMealPlanPDF } from "@/lib/api";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { 
@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart, Bar, XAxis, YAxis } from "recharts";
 import type { MealPlan, Meal } from "@shared/types";
 
@@ -37,6 +38,7 @@ function MealPlanViewContent({ params }: { params: Promise<{ id: string }> }) {
   const [copiedItems, setCopiedItems] = useState<Set<string>>(new Set());
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [planId, setPlanId] = useState<string | null>(null);
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
 
   // Resolve params promise
   useEffect(() => {
@@ -232,7 +234,7 @@ function MealPlanViewContent({ params }: { params: Promise<{ id: string }> }) {
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <Badge className="bg-primary/20 text-primary border-primary/30 text-lg px-4 py-1">
-                  {plan.plan_type.charAt(0).toUpperCase() + plan.plan_type.slice(1)} Plan
+                  {(plan.plan_type || 'Daily').charAt(0).toUpperCase() + (plan.plan_type || 'daily').slice(1)} Plan
                 </Badge>
                 <span className="text-gray-400 flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
@@ -244,9 +246,42 @@ function MealPlanViewContent({ params }: { params: Promise<{ id: string }> }) {
               </h1>
             </div>
             <div className="flex gap-3">
-              <Button variant="outline" className="border-white/20 text-white hover:bg-white/10">
-                <Download className="mr-2 h-4 w-4" />
-                Download PDF
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  if (!planId) return;
+                  
+                  setIsExportingPDF(true);
+                  try {
+                    const blob = await exportMealPlanPDF(planId);
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `meal-plan-${planId}-${new Date().toISOString().split('T')[0]}.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    
+                    toast({
+                      title: "Success!",
+                      description: "PDF downloaded successfully.",
+                    });
+                  } catch (error: any) {
+                    toast({
+                      title: "Error",
+                      description: error.message || "Failed to export PDF",
+                      variant: "destructive",
+                    });
+                  } finally {
+                    setIsExportingPDF(false);
+                  }
+                }}
+                disabled={isExportingPDF}
+                className="border-white/20 text-white hover:bg-white/10"
+              >
+                <Download className={cn("mr-2 h-4 w-4", isExportingPDF && "animate-spin")} />
+                {isExportingPDF ? "Generating..." : "Download PDF"}
               </Button>
               <AlertDialog>
                 <AlertDialogTrigger asChild>

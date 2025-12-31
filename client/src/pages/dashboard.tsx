@@ -344,7 +344,7 @@ function DashboardContent() {
                   </p>
                   {onboardingStatus?.completed ? (
                     <Button 
-                      onClick={() => setLocation("/meal-plans")}
+                      onClick={() => setLocation("/generate-meal-plan")}
                       className="w-full bg-primary hover:bg-primary/90 text-black font-bold uppercase tracking-wide h-12"
                     >
                       <Plus className="mr-2 h-5 w-5" />
@@ -388,58 +388,21 @@ function DashboardContent() {
         {!isProfessional && (
           <Card className="bg-gray-900/50 border-white/10 mb-8">
             <CardHeader>
-              <CardTitle className="text-white uppercase">Quick Generate</CardTitle>
+              <CardTitle className="text-white uppercase">Generate Meal Plan</CardTitle>
             </CardHeader>
             <CardContent>
             <div className="space-y-4">
-              <div className="grid grid-cols-3 gap-4">
-                {(["daily", "weekly", "monthly"] as const).map((type) => {
-                  const quotaForType = type === "monthly" ? quota?.monthlyPlans : quota?.weeklyPlans;
-                  const remaining = quotaForType ? quotaForType.limit - quotaForType.used : 0;
-                  const isExceeded = remaining <= 0;
-                  const isGenerating = generatingPlanType === type;
-
-                  return (
-                    <div key={type}>
-                      <Button
-                        onClick={() => generateMutation.mutate(type)}
-                        disabled={isExceeded || isGenerating || generatingPlanType !== null}
-                        className={`
-                          w-full h-20 font-bold uppercase tracking-wide
-                          ${isExceeded 
-                            ? "bg-gray-800 text-gray-500 cursor-not-allowed" 
-                            : "bg-primary hover:bg-primary/90 text-black"
-                          }
-                        `}
-                      >
-                        {isGenerating ? (
-                          <>
-                            <Spinner className="mr-2 h-4 w-4" />
-                            Generating...
-                          </>
-                        ) : (
-                          getPlanTypeLabel(type)
-                        )}
-                      </Button>
-                    </div>
-                  );
-                })}
-              </div>
-              {generatingPlanType && (
-                <div className="mt-4 p-4 bg-primary/10 border border-primary/30 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Clock className="h-5 w-5 text-primary animate-spin" />
-                    <div>
-                      <p className="text-sm font-bold text-white">
-                        Generating your personalized meal plan...
-                      </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        This may take 15-30 seconds. Please don't close this page.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <p className="text-gray-400 text-sm mb-4">
+                Complete our questionnaire to generate a personalized meal plan tailored to your needs.
+              </p>
+              <Link href="/generate-meal-plan">
+                <Button
+                  className="w-full bg-primary hover:bg-primary/90 text-black font-bold uppercase tracking-wide h-12"
+                >
+                  <Plus className="mr-2 h-5 w-5" />
+                  Start Questionnaire
+                </Button>
+              </Link>
             </div>
           </CardContent>
         </Card>
