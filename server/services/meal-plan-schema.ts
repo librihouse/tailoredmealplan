@@ -36,6 +36,7 @@ export interface MealPlanSchema {
     Spices?: string[];
     [key: string]: string[] | undefined;
   };
+  validationNotes?: string[]; // Simple customer-friendly notes about any quality issues
 }
 
 export interface Meal {

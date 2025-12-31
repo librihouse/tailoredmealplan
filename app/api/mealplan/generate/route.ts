@@ -380,6 +380,7 @@ export async function POST(request: NextRequest) {
       overview: mealPlan.overview,
       days: mealPlan.days,
       groceryList: mealPlan.groceryList,
+      validationNotes: (mealPlan as any).validationNotes || [], // Include validation notes if any
       generatedAt: new Date().toISOString(),
       tokenUsage: usage,
     };

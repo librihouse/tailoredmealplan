@@ -154,6 +154,7 @@ function MealPlanViewContent({ params }: { params: Promise<{ id: string }> }) {
   const overview = planData?.overview || planData?.overview;
   const days = planData?.days || [];
   const groceryList = planData?.groceryList || {};
+  const validationNotes = planData?.validationNotes || [];
 
   // Prepare data for charts
   const macroData = overview ? [
@@ -227,6 +228,23 @@ function MealPlanViewContent({ params }: { params: Promise<{ id: string }> }) {
             <Link href="/terms" className="text-yellow-400 underline ml-1">View Terms of Service</Link>
           </p>
         </div>
+
+        {/* Validation Notes - Simple informational notes for customer */}
+        {validationNotes && validationNotes.length > 0 && (
+          <div className="mb-6 bg-blue-900/20 border-l-4 border-blue-500 p-4 rounded">
+            <p className="text-blue-300 text-sm font-medium mb-2">
+              <strong className="text-blue-400">Note:</strong> Please review the following:
+            </p>
+            <ul className="space-y-1 text-blue-200 text-sm">
+              {validationNotes.map((note: string, index: number) => (
+                <li key={index} className="flex items-start gap-2">
+                  <span className="text-blue-400 mt-1">•</span>
+                  <span>{note}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Header */}
         <div className="mb-8">

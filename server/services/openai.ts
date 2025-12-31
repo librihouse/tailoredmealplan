@@ -2629,9 +2629,10 @@ export async function generateMealPlan(
             currentViolations = revalidationResult.violations; // Update violations for next attempt
             repairedPlan = repairedPlanForGrocery as MealPlanSchema; // Update for next repair attempt
             
-            // If this was the last attempt, update mealPlan with the best we have
+            // If this was the last attempt, update mealPlan with the best we have and attach notes
             if (repairAttempts >= maxRepairAttempts) {
               mealPlan = repairedPlanForGrocery;
+              // Convert remaining violations to notes (will be handled in final validation below)
             }
           }
         } catch (repairError: any) {
@@ -2644,13 +2645,104 @@ export async function generateMealPlan(
         }
       }
       
-      // If repair failed or wasn't attempted, check if we should throw
-      // Be more lenient - only throw if there are truly critical issues that can't be ignored
+      // Convert violations to simple customer-friendly notes
+      // This function translates technical validation messages into plain language
+      function convertViolationsToNotes(violations: any[]): string[] {
+        const notes: string[] = [];
+        
+        violations.forEach(v => {
+          // Convert technical messages to simple customer language
+          if (v.code === 'CALORIE_MISMATCH') {
+            const match = v.message.match(/Difference:\s*(\d+)\s*kcal/);
+            if (match) {
+              const diff = parseInt(match[1]);
+              notes.push(`The total daily calories are ${diff} calories ${diff > 0 ? 'less' : 'more'} than your target. You may want to adjust portion sizes slightly.`);
+            } else {
+              notes.push(`The daily calorie total doesn't exactly match your target. Consider adjusting portion sizes if needed.`);
+            }
+          } else if (v.code === 'MACRO_MISMATCH_PROTEIN') {
+            const match = v.message.match(/overview\s*\((\d+)g\).*Difference:\s*(\d+)g/);
+            if (match) {
+              const target = parseInt(match[1]);
+              const diff = parseInt(match[2]);
+              notes.push(`Protein content is ${diff}g ${diff > 0 ? 'less' : 'more'} than the target of ${target}g. You may want to add more protein-rich foods or adjust portions.`);
+            } else {
+              notes.push(`The protein content doesn't exactly match the target. Consider adding protein-rich foods if needed.`);
+            }
+          } else if (v.code === 'MACRO_MISMATCH_CARBS') {
+            const match = v.message.match(/overview\s*\((\d+)g\).*Difference:\s*(\d+)g/);
+            if (match) {
+              const target = parseInt(match[1]);
+              const diff = parseInt(match[2]);
+              notes.push(`Carbohydrate content is ${diff}g ${diff > 0 ? 'less' : 'more'} than the target of ${target}g. You may want to adjust grain or fruit portions.`);
+            } else {
+              notes.push(`The carbohydrate content doesn't exactly match the target. Consider adjusting portions if needed.`);
+            }
+          } else if (v.code === 'MACRO_MISMATCH_FAT') {
+            const match = v.message.match(/overview\s*\((\d+)g\).*Difference:\s*(\d+)g/);
+            if (match) {
+              const target = parseInt(match[1]);
+              const diff = parseInt(match[2]);
+              notes.push(`Fat content is ${diff}g ${diff > 0 ? 'less' : 'more'} than the target of ${target}g. You may want to adjust oil, nuts, or dairy portions.`);
+            } else {
+              notes.push(`The fat content doesn't exactly match the target. Consider adjusting portions if needed.`);
+            }
+          } else if (v.code === 'BREAKFAST_DISTRIBUTION' || v.code === 'LUNCH_DISTRIBUTION' || v.code === 'DINNER_DISTRIBUTION') {
+            const match = v.message.match(/(\d+\.?\d*)%/);
+            const mealName = v.code.includes('BREAKFAST') ? 'breakfast' : v.code.includes('LUNCH') ? 'lunch' : 'dinner';
+            if (match) {
+              const pct = parseFloat(match[1]);
+              notes.push(`Your ${mealName} makes up ${pct}% of daily calories, which is ${pct > 40 ? 'higher' : 'lower'} than the recommended range. You may want to adjust portion sizes.`);
+            }
+          } else if (v.code === 'SNACKS_DISTRIBUTION') {
+            const match = v.message.match(/(\d+\.?\d*)%/);
+            if (match) {
+              const pct = parseFloat(match[1]);
+              if (pct === 0) {
+                notes.push(`No snacks are included in this plan. You may want to add healthy snacks between meals if needed.`);
+              } else {
+                notes.push(`Snacks make up ${pct}% of daily calories, which is ${pct < 10 ? 'lower' : 'higher'} than the recommended range. Consider adjusting snack portions.`);
+              }
+            }
+          } else if (v.code === 'MISSING_GROCERY_ITEM') {
+            const match = v.message.match(/Ingredient\s+"([^"]+)"/);
+            if (match) {
+              notes.push(`Some ingredients used in recipes may not be listed in the grocery list. Please check and add any missing items you need.`);
+            }
+          } else {
+            // Generic fallback - simplify the message
+            const simplified = v.message
+              .replace(/Day \d+ /g, '')
+              .replace(/does not match/g, "doesn't match")
+              .replace(/must be within/g, 'should be within')
+              .replace(/for \w+ goal/g, '');
+            notes.push(simplified);
+          }
+        });
+        
+        // Remove duplicates
+        return Array.from(new Set(notes));
+      }
+      
+      // If repair failed or wasn't attempted, attach violations as notes but NEVER throw
+      // ALWAYS deliver the meal plan - violations become informational notes
       const finalValidation = validatePlan(mealPlan as MealPlanSchema, request.userProfile, targetCalories, request.planType);
       if (!finalValidation.pass) {
         const criticalViolations = finalValidation.violations.filter(v => v.severity === 'critical');
         
-        // Filter out violations that are acceptable (e.g., minor calorie differences, missing grocery items that are likely false positives)
+        // Convert all violations to simple customer-friendly notes
+        const validationNotes = convertViolationsToNotes(finalValidation.violations);
+        
+        // Attach notes to meal plan - NEVER throw, always deliver
+        if (!(mealPlan as any).validationNotes) {
+          (mealPlan as any).validationNotes = [];
+        }
+        (mealPlan as any).validationNotes.push(...validationNotes);
+        
+        log(`Meal plan has ${finalValidation.violations.length} violations - converting to customer notes and delivering plan`, "openai");
+        log(`Validation notes: ${validationNotes.join('; ')}`, "openai");
+        
+        // Filter out violations that are acceptable (for logging only - we still deliver)
         const trulyCritical = criticalViolations.filter(v => {
           // Allow moderate calorie differences (±150 kcal instead of ±25) - this accounts for rounding and LLM approximation
           if (v.code === 'CALORIE_MISMATCH') {
@@ -2717,11 +2809,11 @@ export async function generateMealPlan(
         });
         
         if (trulyCritical.length > 0) {
-          log(`Meal plan has ${trulyCritical.length} truly critical violations (out of ${criticalViolations.length} total)`, "openai");
-          throw new Error(`Meal plan validation failed with ${trulyCritical.length} critical violations: ${trulyCritical.map(v => v.message).join('; ')}`);
+          log(`Meal plan has ${trulyCritical.length} truly critical violations (out of ${criticalViolations.length} total) - delivering with notes`, "openai");
+          // NEVER throw - always deliver the meal plan with notes
         }
-        // If only warnings or acceptable violations, log but continue
-        log(`Meal plan has ${finalValidation.violations.length} violations but none are truly critical, proceeding`, "openai");
+        // Always proceed - violations are now notes, not blockers
+        log(`Delivering meal plan with ${finalValidation.violations.length} violations converted to customer notes`, "openai");
       }
     } else {
       log(`Meal plan validation successful: ${mealPlan.days.length} days, ${mealPlan.overview.duration} day duration`, "openai");
